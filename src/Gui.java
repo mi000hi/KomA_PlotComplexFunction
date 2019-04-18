@@ -244,10 +244,10 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 
 			inputArea = new double[] { -2, 2, -2, 2 };
 
-			calculationDensity = 30;
+			calculationDensity = 50;
 			paintDensity = 10;
 			coordinateLineDensity = 1;
-			dotWidth = 3;
+			dotWidth = 5;
 			paintLocationDots = false;
 			paintHorizontalLines = true;
 			paintVerticalLines = true;
