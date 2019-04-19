@@ -4,119 +4,83 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Point;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
-import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 public class Leinwand2D extends JPanel {
 
-	private Dimension PANELSIZE; // size of the painting area / JPanel
-	private int MARGIN; // margin around coordinate system
-	private int DRAWWIDTH; // width of drawing area
-	private int DRAWHEIGHT; // height of drawing area
-	private String FUNCTION; // name of the function
+	private final int MARGIN; // margin around coordinate system
 
 	// Graphing options
 	private double[] inputArea; // take input z = x+iy with x = [0...1] and y = [2...3]
-	private int density, calculatedDensity; // how many values are calculated between x && y = [n...n+1]
+	private int density; // how many values are drawn between x && y = [n...n+1]
 	private int[] outputArea; // draw [0...1] x [2...3]
 	private int coordinatelineDensity;
 	private Point ZERO; // (0, 0) on the coordinate system
-	private Point WIDTH_HEIGHT; // (WIDTH, HEIGHT) of one step in coordinate system
-	private int DOTWIDTH; // width of a calculated point
-	private int LINEOPACITY; // opacity of lines
-	private int LINEOPACITY2; // opacity of lines2
+	private int dotwidth; // width of a calculated point
 
-	private int SHIFTCOLORRANGE2; // offset of colorrange2
-	private Font FONT = new Font("Ubuntu", Font.PLAIN, 30);
-
-	// Functions
-	private Complex z;
+	private Font FONT = new Font("Ubuntu", Font.PLAIN, 30); // font used for the title
 
 	// set what to draw
-	private boolean PAINTFUNCTIONPOINTS;
-	private boolean PAINTHORIZONTALLINES;
-	private boolean PAINTVERTICALLINES;
-	private boolean SHOW3DPLOTS;
+	private boolean paintFunctionPoints; // painting function points
+	private boolean paintHorizontalLines; // painting horizontal lines from input grid
+	private boolean paintVerticalLines; // painting verticalLines from input grid
 
-	private Dimension paintableDimension;
-	private Point ONE;
+	private Dimension paintableDimension; // square dimension where we can paint on
+	private Point ONE; // location of the point (1, 1)
 
-	private Gui parent;
+	private Gui parent; // this parent gui, where we can get informations from
 
-	private ArrayList<Complex> inputPoints, outputPoints;
+	private ArrayList<Complex> inputPoints, outputPoints; // input and output points from f(z)
+
+	/* CONSTRUCTOR */
 
 	/**
 	 * Constructor, builds the JPanel and defines values used to draw the function
 	 * 
-	 * @param size              size of the jpanel
-	 * @param functionIndex     index of function to draw
-	 * @param input_numberarea  input definition area
-	 * @param output_numberarea output definition area
+	 * @param parent parent class, this is where we get informations from
 	 */
 	public Leinwand2D(Gui parent) {
 
-		MARGIN = 50;
+		// save given variables
 		this.parent = parent;
 
-//		DRAWWIDTH = (int) size.getWidth() - 2 * MARGIN;
-//		DRAWHEIGHT = (int) size.getHeight() - 2 * MARGIN;
-//		ZERO = new Point((int) (1.03 * size.getWidth() / 2.0), (int) (size.getHeight() / 2.0));
-//		INPUT_NUMBERAREA = input_numberarea;
-//		OUTPUT_NUMBERAREA = output_numberarea;
-//		WIDTH_HEIGHT = new Point(DRAWWIDTH / (Math.abs(OUTPUT_NUMBERAREA[0]) + OUTPUT_NUMBERAREA[1]),
-//				DRAWHEIGHT / (Math.abs(OUTPUT_NUMBERAREA[2]) + OUTPUT_NUMBERAREA[3]));
-//
-//		DENSITY = density;
-//		COORDINATELINE_DENSITY = coordinatelineDensity;
-//		DOTWIDTH = dotwidth;
-//
-//		LINEOPACITY = 255;
-//		LINEOPACITY2 = 255;
-//		SHIFTCOLORRANGE2 = 0;
-//
-//		PAINTFUNCTIONPOINTS = showFunctionPoints;
-//		PAINTHORIZONTALLINES = showHorizontalLines;
-//		PAINTVERTICALLINES = showVerticalLines;
+		// initialize final variables
+		MARGIN = 50;
 
+		// set up this jpanel
 		this.setOpaque(true);
 		this.setBackground(Color.BLACK);
 
 	}
 
-	public void setPlotSettings(int density, int calculatedDensity, int coordinatelineDensity, int dotWidth,
-			boolean paintDots, boolean paintHorizontalLines, boolean paintVerticalLines) {
-
-		this.density = density;
-		this.calculatedDensity = calculatedDensity;
-		this.coordinatelineDensity = coordinatelineDensity;
-		this.DOTWIDTH = dotWidth;
-		this.PAINTFUNCTIONPOINTS = paintDots;
-		this.PAINTHORIZONTALLINES = paintHorizontalLines;
-		this.PAINTVERTICALLINES = paintVerticalLines;
-
-	}
+	/* PAINTCOMPONENT */
 
 	/**
 	 * this function paints everything, the function, the coordinate system, the
 	 * legends and the connecting lines
+	 * 
+	 * @param g needed to paint
 	 */
 	public void paintComponent(Graphics g) {
 
+		// reset image, clearing the Graphics g variable
 		super.paintComponent(g);
 
+		// return if we have nothing to paint
 		if (inputArea == null) {
 			return;
 		}
 
 		g.setFont(FONT);
 
+		// calculate square that we can paint on
 		int smallerLength = Math.min(this.getSize().width - MARGIN, this.getSize().height - MARGIN);
 		paintableDimension = new Dimension(smallerLength, smallerLength);
 
+		// set the zero point accordingly
 		ZERO = new Point(this.getSize().width / 2, this.getSize().height / 2);
+
 		// draw the coordinate System with its labels
 		drawCoordinateSystem(g);
 
@@ -125,6 +89,102 @@ public class Leinwand2D extends JPanel {
 
 		// draw the color legends
 		drawColorLegend(g);
+
+	}
+
+	/**
+	 * for each point in inputArea on the density, get a corresponding functionValue
+	 * and draw that on the JPanel. parallel it will draw a grid that links the
+	 * functionValue's that were in a rectangular grid in inputArea
+	 * 
+	 * @param g using Graphics to directly paint on the JPanel
+	 */
+	private void drawFunction(Graphics g) {
+
+		Complex functionValue = new Complex(0, 0, true); // result of the function
+		Point currentPoint = new Point(0, 0), lastPoint = currentPoint; // on-screen-location of the current drawn
+																		// functionValue
+
+		boolean startNewLine = false; // is false while we draw all y coordinates at a fixed x coordinate
+
+		int pointsInXDirection = 1 + (int) (Math.abs(inputArea[0]) + Math.abs(inputArea[1])) * density;
+		int pointsInYDirection = 1 + (int) ((Math.abs(inputArea[2]) + Math.abs(inputArea[3])) * density);
+
+//		System.out.println(pointsInXDirection + " x " + pointsInYDirection + " = " + outputPoints.size() + " points");
+
+		for (int x = 0; x < pointsInXDirection; x++) {
+
+			startNewLine = true;
+
+			for (int y = 0; y < pointsInYDirection; y++) {
+
+				if (x * pointsInYDirection + y < outputPoints.size()) {
+					functionValue = outputPoints.get(x * pointsInYDirection + y);
+
+					if (functionValue.getRe() != parent.getSecretNumber()) {
+
+						if (startNewLine) {
+							currentPoint = getPointAt(functionValue.getRe(), functionValue.getIm());
+							lastPoint = currentPoint;
+							startNewLine = false;
+						} else {
+							lastPoint = currentPoint;
+							currentPoint = getPointAt(functionValue.getRe(), functionValue.getIm());
+						}
+
+						if (paintVerticalLines) {
+
+							g.setColor(getColor2(x, 0, pointsInXDirection - 1));
+							g.drawLine(lastPoint.x, lastPoint.y, currentPoint.x, currentPoint.y);
+						}
+						if (paintFunctionPoints) {
+							drawPointAt(functionValue.getRe(), functionValue.getIm(), g);
+						}
+
+					} else {
+						startNewLine = true;
+					}
+
+				}
+
+			}
+
+		}
+
+		if (paintHorizontalLines) {
+			for (int y = 0; y < pointsInYDirection; y++) {
+
+				startNewLine = true;
+				g.setColor(getColor(y, 0, pointsInYDirection - 1));
+
+				for (int x = 0; x < pointsInXDirection; x++) {
+
+					if (x * pointsInYDirection + y < outputPoints.size()) {
+						functionValue = outputPoints.get(x * pointsInYDirection + y);
+
+						if (functionValue.getRe() != parent.getSecretNumber()) {
+
+							if (startNewLine) {
+								currentPoint = getPointAt(functionValue.getRe(), functionValue.getIm());
+								lastPoint = currentPoint;
+								startNewLine = false;
+							} else {
+								lastPoint = currentPoint;
+								currentPoint = getPointAt(functionValue.getRe(), functionValue.getIm());
+							}
+
+							g.drawLine(lastPoint.x, lastPoint.y, currentPoint.x, currentPoint.y);
+							// drawPointAt(functionValue.getRe(), functionValue.getIm(), g);
+						} else {
+							startNewLine = true;
+						}
+
+					}
+
+				}
+
+			}
+		}
 
 	}
 
@@ -187,155 +247,8 @@ public class Leinwand2D extends JPanel {
 	}
 
 	/**
-	 * for each point in INPUT_NUMBERAREA on the DENSITY, get a corresponding
-	 * functionValue and draw that on the JPanel. parallel it will draw a grid that
-	 * links the functionValue's that were in a rectangular grid in INPUT_NUMBERAREA
-	 * 
-	 * @param functionIndex defines which function is to be drawn
-	 * @param g             using Graphics to directly paint on the JPanel
-	 */
-	private void drawFunction(Graphics g) {
-
-		Complex functionValue = new Complex(0, 0, true); // result of the function
-		Point currentPoint = new Point(0, 0), lastPoint = currentPoint; // on-screen-location of the current drawn
-																		// functionValue
-
-		boolean startNewLine = false; // is false while we draw all y coordinates at a fixed x coordinate
-
-		int pointsInXDirection = 1 + (int) (Math.abs(inputArea[0]) + Math.abs(inputArea[1])) * density;
-		int pointsInYDirection = 1 + (int) ((Math.abs(inputArea[2]) + Math.abs(inputArea[3])) * density);
-
-//		System.out.println(pointsInXDirection + " x " + pointsInYDirection + " = " + outputPoints.size() + " points");
-
-		for (int x = 0; x < pointsInXDirection; x++) {
-
-			startNewLine = true;
-
-			for (int y = 0; y < pointsInYDirection; y++) {
-
-				if (x * pointsInYDirection + y < outputPoints.size()) {
-					functionValue = outputPoints.get(x * pointsInYDirection + y);
-
-					if (functionValue.getRe() != parent.getSecretNumber()) {
-
-						if (startNewLine) {
-							currentPoint = getPointAt(functionValue.getRe(), functionValue.getIm());
-							lastPoint = currentPoint;
-							startNewLine = false;
-						} else {
-							lastPoint = currentPoint;
-							currentPoint = getPointAt(functionValue.getRe(), functionValue.getIm());
-						}
-
-						if (PAINTVERTICALLINES) {
-
-							g.setColor(getColor2(x, 0, pointsInXDirection - 1));
-							g.drawLine(lastPoint.x, lastPoint.y, currentPoint.x, currentPoint.y);
-						}
-						if (PAINTFUNCTIONPOINTS) {
-							drawPointAt(functionValue.getRe(), functionValue.getIm(), g);
-						}
-
-					} else {
-						startNewLine = true;
-					}
-
-				}
-
-			}
-
-		}
-
-		if (PAINTHORIZONTALLINES) {
-			for (int y = 0; y < pointsInYDirection; y++) {
-
-				startNewLine = true;
-				g.setColor(getColor(y, 0, pointsInYDirection - 1));
-
-				for (int x = 0; x < pointsInXDirection; x++) {
-
-					if (x * pointsInYDirection + y < outputPoints.size()) {
-						functionValue = outputPoints.get(x * pointsInYDirection + y);
-
-						if (functionValue.getRe() != parent.getSecretNumber()) {
-
-							if (startNewLine) {
-								currentPoint = getPointAt(functionValue.getRe(), functionValue.getIm());
-								lastPoint = currentPoint;
-								startNewLine = false;
-							} else {
-								lastPoint = currentPoint;
-								currentPoint = getPointAt(functionValue.getRe(), functionValue.getIm());
-							}
-
-							g.drawLine(lastPoint.x, lastPoint.y, currentPoint.x, currentPoint.y);
-							// drawPointAt(functionValue.getRe(), functionValue.getIm(), g);
-						} else {
-							startNewLine = true;
-						}
-
-					}
-
-				}
-
-			}
-		}
-
-	}
-
-	private Color getColor(double value, double min, double max) {
-
-		Color result;
-		double change1 = (max + Math.abs(min)) / 2;
-		// System.out.println("change at x = " + change1 + ", " + change2);
-
-		double shiftedValue = value - min;
-
-		// minimum
-		if (shiftedValue <= change1) {
-
-//			System.out.println(((int) (shiftedValue * 255 / change1)) + " " + (255 - (int) (shiftedValue * 255 / change1)));
-			result = new Color((int) (shiftedValue * 255 / change1), 255 - (int) (shiftedValue * 255 / change1), 0,
-					255);
-
-			// maximum
-		} else {
-
-			result = new Color(255, (int) ((shiftedValue - change1) * 255 / change1), 0, 255);
-
-		}
-
-		return result;
-	}
-
-	private Color getColor2(double value, double min, double max) {
-
-		Color result;
-		double change1 = (max + Math.abs(min)) / 2;
-		// System.out.println("change at x = " + change1 + ", " + change2);
-
-		double shiftedValue = value - min;
-
-		// minimum
-		if (shiftedValue <= change1) {
-
-//			System.out.println(((int) (shiftedValue * 255 / change1)) + " " + (255 - (int) (shiftedValue * 255 / change1)));
-			result = new Color(100, 255 - (int) (shiftedValue * 255 / change1),
-					255 - (int) (shiftedValue * 100 / change1), 255);
-
-			// maximum
-		} else {
-
-			result = new Color(100 + (int) ((shiftedValue - change1) * 155 / change1), 0, 155, 255);
-
-		}
-
-		return result;
-	}
-
-	/**
 	 * draws two legends for the colors, one for the colors in y direction and one
-	 * for the colors in x direction with bounds of INPUT_NUMBERAREA
+	 * for the colors in x direction with bounds of inputArea
 	 * 
 	 * @param g using Graphics to directly draw the legends on the JPanel
 	 */
@@ -346,8 +259,7 @@ public class Leinwand2D extends JPanel {
 				ZERO.y + paintableDimension.height / 2 - size - MARGIN);
 		Point location2 = new Point(2 * MARGIN, ZERO.y + paintableDimension.height / 2 - size - MARGIN);
 
-		// draw colors
-		/** TODO sync colors with colors used to plot the function */
+		// draw colorlegends
 		for (int x = 0; x <= size; x++) {
 			g.setColor(getColor2(x, 0, size));
 			g.drawLine(location.x + x, location.y, location.x + x, location.y + size);
@@ -356,7 +268,7 @@ public class Leinwand2D extends JPanel {
 			g.drawLine(location2.x, location2.y + size - x, location2.x + size, location2.y + size - x);
 		}
 
-		// draw strings of INPUT_NUMBERAREA bounds
+		// draw strings of inputArea bounds
 		g.setColor(Color.WHITE);
 		g.drawString("x=", location.x - 2 * FONT.getSize(), location.y - 5);
 		g.drawString(Integer.toString((int) Math.round(inputArea[0])), location.x, location.y - 5);
@@ -373,8 +285,8 @@ public class Leinwand2D extends JPanel {
 	 * draw a point at location x, y in the Coordinate system. x and y are NOT
 	 * screen coordinates
 	 * 
-	 * @param x location x value
-	 * @param y location y value
+	 * @param x location x value according to coordinate system
+	 * @param y location y value according to coordinate system
 	 * @param g using Graphics to directly draw on the JPanel
 	 */
 	private void drawPointAt(double x, double y, Graphics g) {
@@ -382,16 +294,86 @@ public class Leinwand2D extends JPanel {
 		g.setColor(Color.YELLOW);
 
 		// invert y axis and draw point on screen
-		g.fillRect((int) (x * ONE.x + ZERO.x - DOTWIDTH / 2), (int) ((-1) * y * ONE.y + ZERO.y - DOTWIDTH / 2),
-				DOTWIDTH, DOTWIDTH);
+		g.fillRect((int) (x * ONE.x + ZERO.x - dotwidth / 2), (int) ((-1) * y * ONE.y + ZERO.y - dotwidth / 2),
+				dotwidth, dotwidth);
 
+	}
+
+	/* GETTERS */
+
+	/**
+	 * returns a color according to the value in [min...max] so that we get that
+	 * fancy color change colors reach from min = green to red to max = yellow
+	 * 
+	 * @param value where we are in [min...max]
+	 * @param min   the minimum of the colorchange-area
+	 * @param max   the maximum of the colorchange-area
+	 * @return the color according to value in [min...max]
+	 */
+	private Color getColor(double value, double min, double max) {
+
+		Color result;
+		double change1 = (max + Math.abs(min)) / 2;
+		// System.out.println("change at x = " + change1 + ", " + change2);
+
+		double shiftedValue = value - min;
+
+		// minimum, green to mid: red
+		if (shiftedValue <= change1) {
+
+//			System.out.println(((int) (shiftedValue * 255 / change1)) + " " + (255 - (int) (shiftedValue * 255 / change1)));
+			result = new Color((int) (shiftedValue * 255 / change1), 255 - (int) (shiftedValue * 255 / change1), 0,
+					255);
+
+			// maximum, yellow to mid: red
+		} else {
+
+			result = new Color(255, (int) ((shiftedValue - change1) * 255 / change1), 0, 255);
+
+		}
+
+		return result;
+	}
+
+	/**
+	 * returns a color according to the value in [min...max] so that we get that
+	 * fancy color change colors reach from min = light blue to violet to max = pink
+	 * 
+	 * @param value where we are in [min...max]
+	 * @param min   the minimum of the colorchange-area
+	 * @param max   the maximum of the colorchange-area
+	 * @return the color according to value in [min...max]
+	 */
+	private Color getColor2(double value, double min, double max) {
+
+		Color result;
+		double change1 = (max + Math.abs(min)) / 2;
+		// System.out.println("change at x = " + change1 + ", " + change2);
+
+		double shiftedValue = value - min;
+
+		// minimum, light blue to mid: violet
+		if (shiftedValue <= change1) {
+
+//			System.out.println(((int) (shiftedValue * 255 / change1)) + " " + (255 - (int) (shiftedValue * 255 / change1)));
+			result = new Color(100, 255 - (int) (shiftedValue * 255 / change1),
+					255 - (int) (shiftedValue * 100 / change1), 255);
+
+			// maximum, pink to mid: violet
+		} else {
+
+			result = new Color(100 + (int) ((shiftedValue - change1) * 155 / change1), 0, 155, 255);
+
+		}
+
+		return result;
 	}
 
 	/**
 	 * returns the screen coordinates of a given point (x, y)
 	 * 
-	 * @param x location x value
-	 * @param y location y value
+	 * @param x location x value according to coordinate system
+	 * @param y location y value according to coordinate system
 	 * @return Point with on-screen-coordinates
 	 */
 	private Point getPointAt(double x, double y) {
@@ -401,27 +383,38 @@ public class Leinwand2D extends JPanel {
 
 	}
 
-//	public String[] getInputArea() {
-//		String[] result = new String[4];
-//
-//		for (int i = 0; i < 4; i++) {
-//			if (INPUT_NUMBERAREA[i] == Math.PI) {
-//				result[i] = "Pi";
-//			} else if (INPUT_NUMBERAREA[i] == -Math.PI) {
-//				result[i] = "-Pi";
-//			} else if (INPUT_NUMBERAREA[i] == 2 * Math.PI) {
-//				result[i] = "2Pi";
-//			} else if (INPUT_NUMBERAREA[i] == -2 * Math.PI) {
-//				result[i] = "2Pi";
-//			} else {
-//				result[i] = Double.toString(INPUT_NUMBERAREA[i]);
-//			}
-//		}
-//
-//		return result;
-//
-//	}
+	/* SETTERS */
 
+	/**
+	 * this function sets the given values with the new plot settings
+	 * 
+	 * @param density               density to draw the lines with TODO: now useless
+	 *                              i think
+	 * @param coordinatelineDensity density to draw the coordinateLines
+	 * @param dotWidth              width of a dot at location f(z)
+	 * @param paintDots             true if we paint the dots at location f(z)
+	 * @param paintHorizontalLines  true if we paint the horizontal lines from the
+	 *                              input grid
+	 * @param paintVerticalLines    true if we paint the vertical lines from the
+	 *                              input grid
+	 */
+	public void setPlotSettings(int density, int coordinatelineDensity, int dotWidth, boolean paintDots,
+			boolean paintHorizontalLines, boolean paintVerticalLines) {
+
+		// saving given variables
+		this.density = density;
+		this.coordinatelineDensity = coordinatelineDensity;
+		this.dotwidth = dotWidth;
+		this.paintFunctionPoints = paintDots;
+		this.paintHorizontalLines = paintHorizontalLines;
+		this.paintVerticalLines = paintVerticalLines;
+
+	}
+
+	/**
+	 * @param inputPoints  points of the input definition function area
+	 * @param outputPoints points of the output, f(z)
+	 */
 	public void setFunctionValues(ArrayList<Complex> inputPoints, ArrayList<Complex> outputPoints) {
 
 		this.inputPoints = inputPoints;
@@ -435,6 +428,9 @@ public class Leinwand2D extends JPanel {
 
 	}
 
+	/**
+	 * @param outputArea adjust the output area size
+	 */
 	public void setOutputArea(int[] outputArea) {
 		if (outputArea == null) {
 			this.outputArea = parent.getOutputAreaSquare();
@@ -443,10 +439,5 @@ public class Leinwand2D extends JPanel {
 		}
 
 	}
-
-//	public void addDot(Point3D location) {
-//
-//		functionPoints.add(location);
-//	}
 
 }

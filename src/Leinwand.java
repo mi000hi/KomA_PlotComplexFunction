@@ -8,6 +8,12 @@ import java.util.Map;
 
 import javax.swing.JPanel;
 
+/**
+ * 
+ * THIS CLASS MAY BE DELETED, its unused for the program
+ * 
+ */
+
 public class Leinwand extends JPanel {
 
 	private final Dimension PANELSIZE; // size of the painting area / JPanel

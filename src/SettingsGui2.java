@@ -14,14 +14,10 @@ import javax.swing.SwingConstants;
 
 public class SettingsGui2 extends JFrame {
 
-	private  Font FONT = new Font("Ubuntu", Font.PLAIN, 40); // font used on the panel
-	private  Font INFOFONT = new Font("Ubuntu", Font.ITALIC, 20); // font used on the panel
+	private Font FONT = new Font("Ubuntu", Font.PLAIN, 40); // font used on the panel
+	private Font INFOFONT = new Font("Ubuntu", Font.ITALIC, 20); // font used on the panel
 	private String function; // name of function
-//	private Leinwand canvas;
-	private Leinwand2D canvas;
 	private SpringLayout layout = new SpringLayout();
-	private  Dimension SIZE; // size of the jframe
-	private JComboBox comboBox; // to select which function to paint
 	private JTextField inputArea, outputArea; // to set input and output area
 	private JTextField density, calculationDensity, coordinatelineDensity, dotwidth;
 	private JTextField functionField;
@@ -30,26 +26,43 @@ public class SettingsGui2 extends JFrame {
 	private JLabel title; // window title
 	private Gui parent;
 
+	/* CONSTRUCTOR */
+
+	/**
+	 * builds this jframe
+	 * 
+	 * @param parent              parent gui
+	 * @param size                size of this jframe
+	 * @param function            the function that is plotted first
+	 * @param functionInputField  input field for the function
+	 * @param applySettingsButton apply button
+	 */
 	public SettingsGui2(Gui parent, Dimension size, String function, JTextField functionInputField,
 			JButton applySettingsButton) {
 
 		super("settings for complex function plotting || by Michael Roth || 5.4.2019");
-		
+
+		// save give variables
 		this.function = function;
 		this.functionField = functionInputField;
 		this.apply = applySettingsButton;
 		this.parent = parent;
 
+		// set up this jframe
 		this.setLayout(layout);
 		this.setSize(size);
-		addSettingsElements();
-		
-//		this.pack();
-
 		this.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+
+		// add gui elements
+		addSettingsElements();
+
+		this.pack();
 
 	}
 
+	/**
+	 * adds all gui elements to this jframe
+	 */
 	private void addSettingsElements() {
 
 		// function name as title
@@ -60,7 +73,7 @@ public class SettingsGui2 extends JFrame {
 		titleCons.setWidth(Spring.constant(this.getSize().width));
 		titleCons.setHeight(Spring.constant(50));
 		layout.addLayoutComponent(title, titleCons);
-		
+
 		JLabel functionFieldLabel = new JLabel("f(z) = ");
 		functionFieldLabel.setFont(FONT);
 		SpringLayout.Constraints functionFieldLabelCons = new Constraints(functionFieldLabel);
@@ -68,7 +81,7 @@ public class SettingsGui2 extends JFrame {
 		functionFieldLabelCons.setHeight(Spring.constant(50));
 		functionFieldLabelCons.setY(titleCons.getConstraint(SpringLayout.SOUTH));
 		layout.addLayoutComponent(functionFieldLabel, functionFieldLabelCons);
-		
+
 		functionField.setFont(FONT);
 		functionField.setText(function);
 		SpringLayout.Constraints functionFieldCons = new Constraints(functionField);
@@ -77,8 +90,9 @@ public class SettingsGui2 extends JFrame {
 		functionFieldCons.setX(functionFieldLabelCons.getConstraint(SpringLayout.EAST));
 		functionFieldCons.setY(functionFieldLabelCons.getConstraint(SpringLayout.NORTH));
 		layout.addLayoutComponent(functionField, functionFieldCons);
-		
-		JLabel functionFieldInfoLabel = new JLabel("example function: f(z) = (sin(z)*cos(z) + 1) * exp(z / (0 - i) + 2 * i) - 2");
+
+		JLabel functionFieldInfoLabel = new JLabel(
+				"example function: f(z) = (sin(z)*cos(z) + 1) * exp(z / (0 - i) + 2 * i) - 2");
 		functionFieldInfoLabel.setFont(INFOFONT);
 		SpringLayout.Constraints functionFieldInfoLabelCons = new Constraints(functionFieldInfoLabel);
 		functionFieldInfoLabelCons.setWidth(Spring.constant((int) (0.85 * this.getSize().width)));
@@ -86,27 +100,30 @@ public class SettingsGui2 extends JFrame {
 		functionFieldInfoLabelCons.setX(functionFieldCons.getConstraint(SpringLayout.WEST));
 		functionFieldInfoLabelCons.setY(functionFieldCons.getConstraint(SpringLayout.SOUTH));
 		layout.addLayoutComponent(functionFieldInfoLabel, functionFieldInfoLabelCons);
-		
+
 		// show Textfields for definition area and output area
 		JLabel inputAreaLabel = new JLabel("f: ");
 		inputAreaLabel.setFont(FONT);
 		SpringLayout.Constraints inputAreaLabelCons = new Constraints(inputAreaLabel);
 		inputAreaLabelCons.setWidth(Spring.constant(this.getSize().width / 10));
 		inputAreaLabelCons.setHeight(Spring.constant(50));
-		inputAreaLabelCons.setY(Spring.sum(functionFieldInfoLabelCons.getConstraint(SpringLayout.SOUTH), Spring.constant(25)));
+		inputAreaLabelCons
+				.setY(Spring.sum(functionFieldInfoLabelCons.getConstraint(SpringLayout.SOUTH), Spring.constant(25)));
 		layout.addLayoutComponent(inputAreaLabel, inputAreaLabelCons);
-		
+
 		JLabel inputInfoLabel2 = new JLabel("[  x_min,    x_max,    y_min,    y_max  ]");
 		inputInfoLabel2.setFont(INFOFONT);
 		SpringLayout.Constraints inputInfoLabel2Cons = new Constraints(inputInfoLabel2);
 		inputInfoLabel2Cons.setWidth(Spring.constant((int) (0.35 * this.getSize().width)));
 		inputInfoLabel2Cons.setHeight(Spring.constant(25));
 		inputInfoLabel2Cons.setX(inputAreaLabelCons.getConstraint(SpringLayout.EAST));
-		inputInfoLabel2Cons.setY(Spring.sum(inputAreaLabelCons.getConstraint(SpringLayout.NORTH), Spring.constant(-25)));
+		inputInfoLabel2Cons
+				.setY(Spring.sum(inputAreaLabelCons.getConstraint(SpringLayout.NORTH), Spring.constant(-25)));
 		layout.addLayoutComponent(inputInfoLabel2, inputInfoLabel2Cons);
 
 		double[] input = parent.getInputAreaSquare();
-		inputArea = new JTextField((int) input[0] + ", " + (int) input[1] + ", " + (int) input[2] + ", " + (int) input[3]);
+		inputArea = new JTextField(
+				(int) input[0] + ", " + (int) input[1] + ", " + (int) input[2] + ", " + (int) input[3]);
 		inputArea.setFont(FONT);
 		SpringLayout.Constraints inputAreaCons = new Constraints(inputArea);
 		inputAreaCons.setWidth(Spring.constant((int) (0.35 * this.getSize().width)));
@@ -131,9 +148,10 @@ public class SettingsGui2 extends JFrame {
 		outputInfoLabel2Cons.setWidth(Spring.constant((int) (0.35 * this.getSize().width)));
 		outputInfoLabel2Cons.setHeight(Spring.constant(25));
 		outputInfoLabel2Cons.setX(outputAreaLabelCons.getConstraint(SpringLayout.EAST));
-		outputInfoLabel2Cons.setY(Spring.sum(outputAreaLabelCons.getConstraint(SpringLayout.NORTH), Spring.constant(-25)));
+		outputInfoLabel2Cons
+				.setY(Spring.sum(outputAreaLabelCons.getConstraint(SpringLayout.NORTH), Spring.constant(-25)));
 		layout.addLayoutComponent(outputInfoLabel2, outputInfoLabel2Cons);
-		
+
 		int[] output = parent.getOutputAreaSquare();
 		outputArea = new JTextField(output[0] + ", " + output[1] + ", " + output[2] + ", " + output[3]);
 		outputArea.setFont(FONT);
@@ -161,7 +179,7 @@ public class SettingsGui2 extends JFrame {
 		outputInfoLabelCons.setX(outputAreaCons.getConstraint(SpringLayout.WEST));
 		outputInfoLabelCons.setY(outputAreaCons.getConstraint(SpringLayout.SOUTH));
 		layout.addLayoutComponent(outputInfoLabel, outputInfoLabelCons);
-		
+
 		// add fields for density
 		JLabel calculationDensityLabel = new JLabel("dots to calculate in n..n+1: ");
 		calculationDensityLabel.setFont(FONT);
@@ -179,7 +197,7 @@ public class SettingsGui2 extends JFrame {
 		calculationDensityCons.setX(calculationDensityLabelCons.getConstraint(SpringLayout.EAST));
 		calculationDensityCons.setY(calculationDensityLabelCons.getConstraint(SpringLayout.NORTH));
 		layout.addLayoutComponent(calculationDensity, calculationDensityCons);
-		
+
 		JLabel densityLabel = new JLabel("dots to paint in n..n+1: ");
 		densityLabel.setFont(FONT);
 		SpringLayout.Constraints densityLabelCons = new Constraints(densityLabel);
@@ -196,7 +214,7 @@ public class SettingsGui2 extends JFrame {
 		densityCons.setX(densityLabelCons.getConstraint(SpringLayout.EAST));
 		densityCons.setY(densityLabelCons.getConstraint(SpringLayout.NORTH));
 		layout.addLayoutComponent(density, densityCons);
-		
+
 		JLabel densityInfoLabel = new JLabel("density >= 4");
 		densityInfoLabel.setFont(INFOFONT);
 		SpringLayout.Constraints densityInfoLabelCons = new Constraints(densityInfoLabel);
@@ -205,7 +223,7 @@ public class SettingsGui2 extends JFrame {
 		densityInfoLabelCons.setX(densityCons.getConstraint(SpringLayout.WEST));
 		densityInfoLabelCons.setY(densityCons.getConstraint(SpringLayout.SOUTH));
 		layout.addLayoutComponent(densityInfoLabel, densityInfoLabelCons);
-		
+
 		JLabel coordinatelineDensityLabel = new JLabel("coordinate lines to draw between n..n+1: ");
 		coordinatelineDensityLabel.setFont(FONT);
 		SpringLayout.Constraints coordinatelineDensityLabelCons = new Constraints(coordinatelineDensityLabel);
@@ -222,7 +240,7 @@ public class SettingsGui2 extends JFrame {
 		coordinatelineDensityCons.setX(coordinatelineDensityLabelCons.getConstraint(SpringLayout.EAST));
 		coordinatelineDensityCons.setY(coordinatelineDensityLabelCons.getConstraint(SpringLayout.NORTH));
 		layout.addLayoutComponent(coordinatelineDensity, coordinatelineDensityCons);
-		
+
 		JLabel coordinatelineDensityInfoLabel = new JLabel("coord.lineDensity >= 1");
 		coordinatelineDensityInfoLabel.setFont(INFOFONT);
 		SpringLayout.Constraints coordinatelineDensityInfoLabelCons = new Constraints(coordinatelineDensityInfoLabel);
@@ -231,7 +249,7 @@ public class SettingsGui2 extends JFrame {
 		coordinatelineDensityInfoLabelCons.setX(coordinatelineDensityCons.getConstraint(SpringLayout.WEST));
 		coordinatelineDensityInfoLabelCons.setY(coordinatelineDensityCons.getConstraint(SpringLayout.SOUTH));
 		layout.addLayoutComponent(coordinatelineDensityInfoLabel, coordinatelineDensityInfoLabelCons);
-		
+
 		JLabel dotwidthLabel = new JLabel("width of a dot at location f(z): ");
 		dotwidthLabel.setFont(FONT);
 		SpringLayout.Constraints dotwidthLabelCons = new Constraints(dotwidthLabel);
@@ -340,77 +358,60 @@ public class SettingsGui2 extends JFrame {
 
 	}
 
-	public void setInputArea(double[] values) {
-		String result = "";
-		for (int i = 0; i < 4; i++) {
-			if (values[i] == Math.PI) {
-				result += "Pi";
-			} else if (values[i] == -Math.PI) {
-				result += "-Pi";
-			} else if (values[i] == 2 * Math.PI){
-				result += "2Pi";
-			} else if (values[i] == -2 * Math.PI){
-				result += "-2Pi";
-			} else {
-				result += values[i];
-			}
-			result += ", ";
-		}
-		// remove last ', '
-		result = result.substring(0, result.length() - 2);
-		inputArea.setText(result);
-	}
-
-	public void setOutputArea(int[] values) {
-		String result = "";
-		for (int i = 0; i < 4; i++) {
-			result += values[i] + ", ";
-		}
-		// remove last ','
-		result = result.substring(0, result.length() - 1);
-		outputArea.setText(result);
-	}
+	/* GETTERS */
 	
-	public void setDensity(double value) {
-		density.setText(Double.toString(value));
-	}
-	
-	public void setTitleLabel(String name) {
-		title.setText(" ---------- " + name + " ---------- ");
-	}
-
-	public char getSelectedIndex() {
-		return (char) (comboBox.getSelectedIndex() + '0');
-	}
-
+	/**
+	 * @return true if we paint function points
+	 */
 	public boolean paintFunctionPoints() {
 		return functionPoints.isSelected();
 	}
 
+	/**
+	 * @return true if we paint horizontal lines
+	 */
 	public boolean paintHorizontalLines() {
 		return horizontalLines.isSelected();
 	}
 
+	/**
+	 * @return true if we paint vertical lines
+	 */
 	public boolean paintVerticalLines() {
 		return verticalLines.isSelected();
 	}
-	
+
+	/**
+	 * @return the dotWidth
+	 */
 	public int getDotWidth() {
 		return Integer.parseInt(dotwidth.getText());
 	}
-	
+
+	/**
+	 * @return the density
+	 */
 	public int getDensity() {
 		return Integer.parseInt(density.getText());
 	}
-	
+
+	/**
+	 * @return the calculation density
+	 */
 	public int getCalculationDensity() {
 		return Integer.parseInt(calculationDensity.getText());
 	}
-	
+
+	/**
+	 * @return the coordinateline desnity
+	 */
 	public int getCoordinatelineDensity() {
 		return Integer.parseInt(coordinatelineDensity.getText());
 	}
 
+	/**
+	 * @return the inputArea
+	 */
 	public double[] getInputArea() {
 		double[] result = new double[4];
 		String[] split = inputArea.getText().split(",");
@@ -427,11 +428,11 @@ public class SettingsGui2 extends JFrame {
 			case "-Pi":
 				result[i] = -Math.PI;
 				break;
-				
+
 			case "2Pi":
 				result[i] = 2 * Math.PI;
 				break;
-				
+
 			case "-2Pi":
 				result[i] = -2 * Math.PI;
 				break;
@@ -446,12 +447,15 @@ public class SettingsGui2 extends JFrame {
 
 	}
 
+	/**
+	 * @return the outputArea
+	 */
 	public int[] getOutputArea() {
-		
-		if(outputArea.getText().equals("auto")) {
+
+		if (outputArea.getText().equals("auto")) {
 			return null;
 		}
-		
+
 		int[] result = new int[4];
 		String[] split = outputArea.getText().split(",");
 
@@ -462,9 +466,64 @@ public class SettingsGui2 extends JFrame {
 
 		return result;
 	}
-	
+
+	/**
+	 * @return the function to plot
+	 */
 	public String getFunction() {
 		return functionField.getText().replaceAll("\\s", "");
+	}
+	
+	/* SETTERS */
+	/**
+	 * @param values the new inputArea as double[] {..., ..., ..., ...}
+	 */
+	public void setInputArea(double[] values) {
+		String result = "";
+		for (int i = 0; i < 4; i++) {
+			if (values[i] == Math.PI) {
+				result += "Pi";
+			} else if (values[i] == -Math.PI) {
+				result += "-Pi";
+			} else if (values[i] == 2 * Math.PI) {
+				result += "2Pi";
+			} else if (values[i] == -2 * Math.PI) {
+				result += "-2Pi";
+			} else {
+				result += values[i];
+			}
+			result += ", ";
+		}
+		// remove last ', '
+		result = result.substring(0, result.length() - 2);
+		inputArea.setText(result);
+	}
+
+	/**
+	 * @param values the new outputArea as int[] {..., ..., ..., ...}
+	 */
+	public void setOutputArea(int[] values) {
+		String result = "";
+		for (int i = 0; i < 4; i++) {
+			result += values[i] + ", ";
+		}
+		// remove last ','
+		result = result.substring(0, result.length() - 1);
+		outputArea.setText(result);
+	}
+
+	/**
+	 * @param value the new density
+	 */
+	public void setDensity(double value) {
+		density.setText(Double.toString(value));
+	}
+
+	/**
+	 * @param name sets the new title
+	 */
+	public void setTitleLabel(String name) {
+		title.setText(" ---------- " + name + " ---------- ");
 	}
 
 }

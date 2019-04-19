@@ -3,11 +3,8 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
-import java.awt.Graphics2D;
 import java.awt.Point;
-import java.lang.invoke.LambdaConversionException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.stream.Collectors;
 
@@ -18,57 +15,67 @@ import javax.swing.border.Border;
 
 public class Leinwand3D extends JPanel {
 
-	private Graphics g;
-	private Dimension panelSize, plotSize;
-	private int MARGIN;
-	private double[] inputArea;
-	private int DOTWIDTH = 10;
-	private ArrayList<Point3D> functionPoints = new ArrayList<Point3D>();
+	private Gui parent; // parent gui, this is where we get information from
+	private String name; // name and title of this jpanel
+	private JLabel titleLabel; // label that shows the name
 
-	private Point zero = new Point();
-	private Gui parent;
-	private String name;
+	private Dimension panelSize, plotSize; // size of this panel and of the area that we will paint
+	private final int MARGIN; // margin on the panel
 
-	private JLabel titleLabel;
+	private Point zero = new Point(); // zero point of the coordinate system
+	private double[] inputArea; // given input area, size of the x-y-area
+	private int circleWidth = 5; // width of a circle
+	private ArrayList<Point3D> functionPoints = new ArrayList<Point3D>(); // location of the points to plot
+	private boolean drawLines, drawDots; // true if we draw these things
 
-	private boolean drawLines, drawDots;
+	/* CONSTRUCTOR */
 
+	/**
+	 * we will set up this panel here
+	 * 
+	 * @param parent parent gui, this is where we can get informations from
+	 */
 	public Leinwand3D(Gui parent) {
 
 		// take variables
 		this.parent = parent;
 
-		this.setOpaque(true);
-		this.setBackground(Color.black);
-		this.setBorder(BorderFactory.createLineBorder(Color.RED));
+		// initialize final variables
+		MARGIN = 50;
 
+		// add a title label to this jpanel
 		titleLabel = new JLabel();
 		titleLabel.setForeground(Color.WHITE);
 		titleLabel.setFont(new Font("Ubuntu", Font.PLAIN, 30));
 		this.add(titleLabel, BorderLayout.PAGE_START);
 
+		// set up this jpanel
+		this.setOpaque(true);
+		this.setBackground(Color.black);
+//		this.setBorder(BorderFactory.createLineBorder(Color.RED));
+
 	}
 
-	public void setTitle(String title) {
+	/* PAINTCOMPONENT */
 
-		titleLabel.setText("f(z(x, y) = x + iy) = " + title);
-
-	}
-
-	public void setInputArea(double[] inputArea) {
-		this.inputArea = inputArea;
-	}
-
+	/**
+	 * this function paints everything to paint, the 3d graph and the coordinate
+	 * system
+	 * 
+	 * @param g graphics that is needed to paint
+	 */
 	public void paintComponent(Graphics g) {
 
+		// clear the painting, resets g
 		super.paintComponent(g);
 
-		// adjust size and zero
+		// adjust size
 		panelSize = this.getSize();
 		int squareSize = Math.min((int) (panelSize.getWidth() / 2), (int) (panelSize.getHeight() / 2));
 		plotSize = new Dimension(squareSize, squareSize);
 //		System.out.println("panel size: " + panelSize.width + "x" + panelSize.height);
 
+		// set zero point accordingly to size
 		double minZ = Math.max(2 * inputArea[0],
 				Collections.min(functionPoints.stream().map(e -> e.getZ()).collect(Collectors.toList())));
 		if (minZ >= 0) {
@@ -77,26 +84,27 @@ public class Leinwand3D extends JPanel {
 			zero.setLocation(panelSize.getWidth() / 2, panelSize.getHeight() / 2);
 		}
 
+		// draw the coordinate system
 		drawCoordinateSystem(g);
 
+		// draw the function, this will draw a coordinate system again
 		drawFunction(g);
 
 	}
 
-	private void setTitle() {
-
-		String title = "f(x + iy) = " + name;
-
-		titleLabel.setText(title);
-
-	}
-
+	/**
+	 * draws the 3d graph with points, or from a grid
+	 * 
+	 * @param g use graphics to draw on the jpanel
+	 */
 	private void drawFunction(Graphics g) {
 
+		// return if theres nothing to draw
 		if (functionPoints.size() == 0) {
 			return;
 		}
 
+		// get minimum and maximum z value for the fancy color flow
 		double minZ = Math.max(2 * inputArea[0],
 				Collections.min(functionPoints.stream().map(e -> e.getZ()).collect(Collectors.toList())));
 		double maxZ;
@@ -110,10 +118,11 @@ public class Leinwand3D extends JPanel {
 		}
 //		System.out.println("function min, max: " + minZ + ", " + maxZ);
 
-		Point currentPoint;
+		Point currentPoint; // the current point to draw on the screen
 
+		// if we want to draw dots
 		if (drawDots) {
-			
+
 			int currentY = (int) inputArea[2]; // for coordinate system painting
 			int currentX = (int) inputArea[0]; // for coordinate system painting
 			Point3D lineStart, lineEnd;
@@ -125,6 +134,7 @@ public class Leinwand3D extends JPanel {
 
 					currentPoint = get2DScreenCoordinates(functionPoints.get(i));
 
+					/** different color schemes */
 					// g.setColor(getColor(Math.sqrt(Math.pow(functionPoints.get(i).getX(), 2) +
 					// Math.pow(functionPoints.get(i).getY(), 2)), 0, Math.sqrt(8)));
 					// g.setColor(getColor(Math.sqrt(Math.pow(functionPoints.get(i).getX(), 2) +
@@ -134,12 +144,16 @@ public class Leinwand3D extends JPanel {
 
 					g.setColor(getColor(functionPoints.get(i).getZ(), minZ, maxZ));
 					// g.setColor(getColor(functionPoints.get(i).getX(), -2, 2));
-					g.fillOval(currentPoint.x - (DOTWIDTH / 2), currentPoint.y - (DOTWIDTH / 2), DOTWIDTH, DOTWIDTH);
+					g.fillOval(currentPoint.x - (circleWidth / 2), currentPoint.y - (circleWidth / 2), circleWidth,
+							circleWidth);
 
 				}
-				
-				if(functionPoints.get(i).getX() - currentX > 0) {
-					
+
+				// draw the coordinate system again on the fly, so that it does not get hidden
+				// behind the graph
+				// x-axes
+				if (functionPoints.get(i).getX() - currentX > 0) {
+
 					lineStart = new Point3D(currentX, inputArea[2], 0);
 					lineEnd = new Point3D(currentX, inputArea[3], 0);
 
@@ -147,41 +161,42 @@ public class Leinwand3D extends JPanel {
 					lineEnd2 = get2DScreenCoordinates(lineEnd);
 
 					g.setColor(Color.WHITE);
-					if(currentX == 0) {
+					if (currentX == 0) {
 						g.fillRect(lineStart2.x, lineStart2.y, lineEnd2.x - lineStart2.x, 3);
 					} else {
 						g.fillRect(lineStart2.x, lineStart2.y, lineEnd2.x - lineStart2.x, 2);
 					}
-					
+
 					currentX++;
-			
+
 				}
-				
-				if(functionPoints.get(i).getY() - currentY > 0) {
-					
+				// y-axes
+				if (functionPoints.get(i).getY() - currentY > 0) {
+
 					lineStart = new Point3D(functionPoints.get(i).getX(), currentY, 0);
 
 					lineStart2 = get2DScreenCoordinates(lineStart);
 
 					g.setColor(Color.WHITE);
-					
-					if(currentY == 0) {
+
+					if (currentY == 0) {
 						g.fillRect(lineStart2.x - 1, lineStart2.y - 1, 3, 3);
 					} else {
 						g.fillOval(lineStart2.x - 1, lineStart2.y - 1, 3, 3);
 					}
-					
-					if(currentY > (int) inputArea[3] - 1) {
+
+					if (currentY > (int) inputArea[3] - 1) {
 						currentY = (int) inputArea[2];
 					} else {
 						currentY++;
 					}
-					
+
 				}
 			}
 
 		}
 
+		// if we want to draw lines
 		if (drawLines) {
 
 			currentPoint = new Point(0, 0);
@@ -204,7 +219,8 @@ public class Leinwand3D extends JPanel {
 
 				for (int y = 0; y < pointsInYDirection; y++) {
 
-					if (functionPoints.get(x * pointsInYDirection + y).getZ() <= maxZ && functionPoints.get(x * pointsInYDirection + y).getZ() >= minZ) {
+					if (functionPoints.get(x * pointsInYDirection + y).getZ() <= maxZ
+							&& functionPoints.get(x * pointsInYDirection + y).getZ() >= minZ) {
 						if (functionPoints.get(x * pointsInYDirection + y).getY() != parent.getSecretNumber()) {
 
 							if (startNewLine) {
@@ -236,7 +252,8 @@ public class Leinwand3D extends JPanel {
 
 				for (int x = 0; x < pointsInXDirection; x++) {
 
-					if (functionPoints.get(x * pointsInYDirection + y).getZ() <= maxZ && functionPoints.get(x * pointsInYDirection + y).getZ() >= minZ) {
+					if (functionPoints.get(x * pointsInYDirection + y).getZ() <= maxZ
+							&& functionPoints.get(x * pointsInYDirection + y).getZ() >= minZ) {
 						if (functionPoints.get(x * pointsInYDirection + y).getY() != parent.getSecretNumber()) {
 
 							if (startNewLine) {
@@ -266,10 +283,15 @@ public class Leinwand3D extends JPanel {
 
 	}
 
+	/**
+	 * draws the coordinate system TODO: z-axis
+	 * 
+	 * @param g using graphics to directly draw on the jpanel
+	 */
 	private void drawCoordinateSystem(Graphics g) {
 
-		Point3D lineStart, lineEnd;
-		Point lineStart2, lineEnd2;
+		Point3D lineStart, lineEnd; // line in 3d coordinates
+		Point lineStart2, lineEnd2; // line in 2d screen coordinates
 
 		g.setColor(Color.GRAY);
 
@@ -315,6 +337,14 @@ public class Leinwand3D extends JPanel {
 
 	}
 
+	/* GETTERS */
+
+	/**
+	 * returns 2d screen coordinates of a given 3d point
+	 * 
+	 * @param point given point in 3d
+	 * @return 2d screen coordinates of the 3d point
+	 */
 	private Point get2DScreenCoordinates(Point3D point) {
 
 		Point result = new Point();
@@ -336,28 +366,40 @@ public class Leinwand3D extends JPanel {
 
 	}
 
+	/**
+	 * returns a color according to the value in [min...max] so that we get that
+	 * fancy color change colors reach from min = yellow to red to blue to max =
+	 * green
+	 * 
+	 * @param value where we are in [min...max]
+	 * @param min   the minimum of the colorchange-area
+	 * @param max   the maximum of the colorchange-area
+	 * @return the color according to value in [min...max]
+	 */
 	private Color getColor(double value, double min, double max) {
 
 //		System.out.println(min + " " + value + " " + max);
-		Color result;
+		Color result; // this will be returned
+
+		// make 3 colorchanges
 		double change1 = (max - min) / 3;
 		double change2 = 2 * (max - min) / 3;
 		// System.out.println("change at x = " + change1 + ", " + change2);
 
 		double shiftedValue = value - min;
 
-		if (shiftedValue <= change1) {
+		if (shiftedValue <= change1) { // from yellow to red
 
 //			System.out.println(
 //					((int) (shiftedValue * 255 / change1)) + " " + (255 - (int) (shiftedValue * 255 / change1)));
 			result = new Color(255, 255 - (int) (shiftedValue * 255 / change1), 0, 255);
 
-		} else if (shiftedValue <= change2) {
+		} else if (shiftedValue <= change2) { // from red to blue
 
 			result = new Color(255 - (int) ((shiftedValue - change1) * 255 / change1), 0,
 					(int) ((shiftedValue - change1) * 255 / change1), 255);
 
-		} else {
+		} else { // from blue to green
 
 			result = new Color(0, (int) ((shiftedValue - change2) * 255 / change1),
 					255 - (int) ((shiftedValue - change2) * 255 / change1), 255);
@@ -367,19 +409,42 @@ public class Leinwand3D extends JPanel {
 		return result;
 	}
 
-	public void addDot(Point3D location) {
+	/* SETTERS */
 
-		functionPoints.add(location);
+	/**
+	 * @param title part of the title to set
+	 */
+	public void setTitle(String title) {
+
+		titleLabel.setText("f(z(x, y) = x + iy) = " + title);
+
 	}
 
-	public void setPlotSettings(int dotwidth, boolean drawDots, boolean drawLines) {
+	/**
+	 * @param inputArea the area and size of the x-y-plane
+	 */
+	public void setInputArea(double[] inputArea) {
+		this.inputArea = inputArea;
+	}
 
-		this.DOTWIDTH = dotwidth;
+	/**
+	 * sets the given variables to plot a new function
+	 * 
+	 * @param circleWidth with of the circles in the plot, at (x, y, g(f(z)))
+	 * @param drawDots    true if we draw dots
+	 * @param drawLines   true if we draw the lines
+	 */
+	public void setPlotSettings(int circleWidth, boolean drawDots, boolean drawLines) {
+
+		this.circleWidth = circleWidth;
 		this.drawDots = drawDots;
 		this.drawLines = drawLines;
 
 	}
 
+	/**
+	 * @param values the new function values to plot
+	 */
 	public void setFunctionValues(ArrayList<Point3D> values) {
 
 		functionPoints = values;
