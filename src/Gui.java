@@ -2,22 +2,17 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.Graphics;
 import java.awt.GridLayout;
-import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
-import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -25,80 +20,114 @@ import javax.swing.JTextField;
 
 public class Gui extends JFrame implements ActionListener, KeyListener {
 
-//	private SettingsGui settingsFrame;
-	private SettingsGui2 settingsFrame;
-//	private static Leinwand canvas;
-	private static Leinwand2D canvas;
-	private static JButton applySettingsButton = new JButton("apply");
-	private static JTextField functionInputField = new JTextField();
-
-	private double[] inputArea;
-	private int[] outputArea;
-	private int calculationDensity, paintDensity;
-	private String function;
-	private ArrayList<Complex> functionInputPoints, functionOutputPoints;
+	// Gui elements that need to be a public variable
+	private SettingsGui2 settingsFrame; // jframe to manage plot settings
+	private JButton applySettingsButton = new JButton("apply"); // apply button on settingsFrame
+	private final Font BUTTON_FONT = new Font("Ubuntu", Font.PLAIN, 40); // font on jbutton
+	private JTextField functionInputField = new JTextField(); // input field for function on settingsFrame
 
 	private Leinwand2D locationCanvas; // 2d plot of new location of f(z)
 	private Leinwand3D realPartCanvas; // 3d plot of real part
 	private Leinwand3D imaginaryPartCanvas; // 3d plot of imaginary part
 	private Leinwand3D argumentCanvas; // 3d plot of argument
 	private Leinwand3D radiusCanvas; // 3d plot of abs(z)
-	
-	private JLabel titleLabel;
-	private double secretNumber = -0.96875; // 0.11111 in binary
 
-	private final Font BUTTON_FONT = new Font("Ubuntu", Font.PLAIN, 40);
+	private JLabel titleLabel; // top label of the jframe, showing the function name
 
-	private int coordinateLineDensity, dotWidth;
-	private boolean paintLocationDots, paintHorizontalLines, paintVerticalLines;
+	// variables that are needed for plotting
+	private String function; // the function to calculate as a string
+	private double[] inputArea; // input definition area for the function
+	private int[] outputArea; // output area for the 2D canvas
+	private ArrayList<Complex> functionInputPoints, functionOutputPoints; // resulting input and output locations
 
+	private double secretNumber = -0.96875; // 0.11111 in binary TODO: remove?
+
+	private int calculationDensity, paintDensity; // will calculate/paint *Density^2 points in a 1x1 unit square
+	private int coordinateLineDensity; // draws one coordinateLine every coordinateLineDensity units
+	private int dotWidth, circleWidth; // width of dots in 2D plot and width of circles in 3D plot
+	private boolean paintLocationDots, paintHorizontalLines, paintVerticalLines; // whether to paint these things or not
+																					// on 2D canvas
+	/* MAIN FUNCTION */
+
+	/**
+	 * will creaate a jframe of this class with the panels to plot the complex
+	 * function
+	 * 
+	 * @param args arguments from command line at startup, will be ignored
+	 */
+	public static void main(String[] args) {
+
+		// first shown function is identity f(z) = z
+		new Gui("z");
+
+	}
+
+	/* CONSTRUCTOR */
+	/**
+	 * builds this jframe with all panels and plots a first function
+	 * 
+	 * @param function the first function that will be plotted
+	 */
 	public Gui(String function) {
 
+		// save given variables
 		this.function = function;
-		outputArea = new int[] { -4, 4, -4, 4 }; // TODO: remove?
 
+		// setup this jframe
 		this.setTitle("KomA_Uebungsserie07 || plot complex functions || by Michael Roth || 3.4.2019");
 		this.setSize(new Dimension(2000, 1100));
+		this.setBackground(Color.BLACK);
+		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+		outputArea = new int[] { -4, 4, -4, 4 }; // TODO: remove?
 
 		functionInputPoints = new ArrayList<Complex>();
 		functionOutputPoints = new ArrayList<Complex>();
 
+		// creating the different jpanels to draw on
 		locationCanvas = new Leinwand2D(this);
 		realPartCanvas = new Leinwand3D(this);
 		imaginaryPartCanvas = new Leinwand3D(this);
 		radiusCanvas = new Leinwand3D(this);
 		argumentCanvas = new Leinwand3D(this);
 
+		// prepare for plotting
 		setPlotSettings();
 		calculateFunctionPoints(calculationDensity);
 
 		settingsFrame = new SettingsGui2(this, new Dimension(1000, 1000), function, functionInputField,
 				applySettingsButton);
 
+		// plot calculated first function
 		setupCanvas();
-		
-		// add a button for settings
+
+		// add gui to this jframe
 		addGuiElements(this);
+
+		// add listeners
 		applySettingsButton.addActionListener(this);
 		functionInputField.addKeyListener(this);
 
-		this.setBackground(Color.BLACK);
-		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		// show jframe
 		this.setVisible(true);
 
 	}
 
+	/**
+	 * gives the needed variables to the different canvas so they can plot when
+	 * *.repaint(); is called
+	 */
 	private void setupCanvas() {
-		
-		long time = System.currentTimeMillis();
 
-		if(outputArea == null) {
+		// TODO: optimize
+		long time = System.currentTimeMillis(); // measure time to see if this is very inefficient
+
+		if (outputArea == null) {
 			outputArea = getOutputAreaSquare();
-			settingsFrame.setOutputArea(getOutputAreaSquare());
+			settingsFrame.setOutputArea(outputArea);
 		}
-		
-		ArrayList<Point3D> functionValues = new ArrayList<Point3D>();
 
+		ArrayList<Point3D> functionValues = new ArrayList<Point3D>();
 		for (int i = 0; i < functionInputPoints.size(); i++) {
 			functionValues.add(new Point3D(functionInputPoints.get(i).getRe(), functionInputPoints.get(i).getIm(),
 					functionOutputPoints.get(i).getRe()));
@@ -126,11 +155,13 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 		}
 		argumentCanvas.setFunctionValues(functionValues);
 
-		// this will also set inputArea and outputArea of locationCanvas
+		// calculate functionPoints for 2D canvas
 		calculateFunctionPoints(paintDensity);
+
+		// this will also set inputArea and outputArea of locationCanvas
 		locationCanvas.setFunctionValues(functionInputPoints, functionOutputPoints);
 
-		// set sizes
+		// set jpanel sizes
 		Dimension smallCanvas = new Dimension(this.getSize().width / 4, (this.getSize().height - 100) / 2);
 //		locationCanvas.setSize(this.getSize().width / 2, this.getSize().height - 100);
 		realPartCanvas.setSize(smallCanvas);
@@ -144,23 +175,28 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 		radiusCanvas.setTitle("| " + function + " |");
 		argumentCanvas.setTitle("Arg( " + function + " )");
 
-		locationCanvas.setPlotSettings(paintDensity, calculationDensity, coordinateLineDensity, dotWidth,
+		locationCanvas.setPlotSettings(paintDensity, coordinateLineDensity, dotWidth,
 				paintLocationDots, paintHorizontalLines, paintVerticalLines);
-		
+
+		// plotting 3D plots as a grid
 //		realPartCanvas.setPlotSettings(dotWidth, false, true);
 //		imaginaryPartCanvas.setPlotSettings(dotWidth, false, true);
 //		radiusCanvas.setPlotSettings(dotWidth, false, true);
 //		argumentCanvas.setPlotSettings(dotWidth, false, true);
-		
-		realPartCanvas.setPlotSettings(dotWidth, true, false);
-		imaginaryPartCanvas.setPlotSettings(dotWidth, true, false);
-		radiusCanvas.setPlotSettings(dotWidth, true, false);
-		argumentCanvas.setPlotSettings(dotWidth, true, false);
-		
-		System.out.println("took " + (System.currentTimeMillis() - time) + "ms");
+
+		// plotting 3D plots with points
+		realPartCanvas.setPlotSettings(circleWidth, true, false);
+		imaginaryPartCanvas.setPlotSettings(circleWidth, true, false);
+		radiusCanvas.setPlotSettings(circleWidth, true, false);
+		argumentCanvas.setPlotSettings(circleWidth, true, false);
+
+		System.out.println("SETUPCANVAS: \t distributing values took " + (System.currentTimeMillis() - time) + "ms");
 
 	}
 
+	/**
+	 * repaints the 5 canvas
+	 */
 	private void repaintCanvas() {
 
 		locationCanvas.repaint();
@@ -171,12 +207,18 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 
 	}
 
+	/**
+	 * adds the gui to the given jframe, here parentFrame == this
+	 * 
+	 * @param parentFrame jframe to containing new gui elements
+	 */
 	private void addGuiElements(JFrame parentFrame) {
 
+		// top panel for the title
 		JPanel titlePanel = new JPanel();
 		titlePanel.setOpaque(true);
 		titlePanel.setBackground(Color.BLACK);
-		titlePanel.setBorder(BorderFactory.createLineBorder(Color.BLUE));
+//		titlePanel.setBorder(BorderFactory.createLineBorder(Color.BLUE));
 
 		titleLabel = new JLabel("f(z) = " + function);
 		titleLabel.setFont(new Font("Ubuntu", Font.PLAIN, 50));
@@ -184,13 +226,15 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 
 		titlePanel.add(titleLabel);
 
+		// big jpanel for the different canvas
 		JPanel canvasPanel = new JPanel();
 		canvasPanel.setLayout(new GridLayout(1, 2));
-		canvasPanel.setBorder(BorderFactory.createLineBorder(Color.RED));
+//		canvasPanel.setBorder(BorderFactory.createLineBorder(Color.RED));
 
+		// jpanel for the 4 3D plots
 		JPanel plot3DPanel = new JPanel();
 		plot3DPanel.setLayout(new GridLayout(2, 2));
-		plot3DPanel.setBorder(BorderFactory.createLineBorder(Color.GREEN));
+//		plot3DPanel.setBorder(BorderFactory.createLineBorder(Color.GREEN));
 
 		plot3DPanel.add(realPartCanvas);
 		plot3DPanel.add(imaginaryPartCanvas);
@@ -200,6 +244,7 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 		canvasPanel.add(plot3DPanel);
 		canvasPanel.add(locationCanvas);
 
+		// bottom jbutton to access settingsFrame
 		JButton settings = new JButton("settings");
 		settings.setFont(BUTTON_FONT);
 		settings.addActionListener(this);
@@ -211,35 +256,16 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 	}
 
 	/**
-	 * returns the first number that finds place on a gridline or a gridline +- a
-	 * multiple of 1 / calculationDensity
+	 * sets or initializes settings to be able to plot the functions later on
 	 * 
-	 * @return smallest x value that is on gridline +- factor / calculationDensity
+	 * @return true if we need to recalculate the function, false if we just can
+	 *         adjust the visual part without recalculating the function
 	 */
-	private double getFirstXValue() {
-
-		double result;
-
-		// go above smallest gridline
-		if (inputArea[0] < 0) {
-			result = (int) inputArea[0];
-		} else {
-			result = 1 + (int) inputArea[0];
-		}
-
-		// subtract 1 / DENSITY as long as we are in the INPUT_NUMBERAREA
-		while (result - 1.0 / calculationDensity > inputArea[0]) {
-			result -= 1.0 / calculationDensity;
-		}
-
-		return result;
-
-	}
-
 	private boolean setPlotSettings() {
 
-		boolean needToRecalculateFunction = false;
+		boolean needToRecalculateFunction = false; // will be returned
 
+		// if we need to initialize because settingsFrame doesnt exist yet
 		if (settingsFrame == null) {
 
 			inputArea = new double[] { -2, 2, -2, 2 };
@@ -247,21 +273,23 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 			calculationDensity = 50;
 			paintDensity = 10;
 			coordinateLineDensity = 1;
-			dotWidth = 5;
+			dotWidth = 3;
+			circleWidth = 5;
 			paintLocationDots = false;
 			paintHorizontalLines = true;
 			paintVerticalLines = true;
 
 			needToRecalculateFunction = true;
 
-		} else {
+		} else { // set new variables as given in settingsFrame
 
 			String newFunction = settingsFrame.getFunction();
 
+			// adjust definition area
 			double[] newInputArea = settingsFrame.getInputArea();
-			
 			outputArea = settingsFrame.getOutputArea();
 
+			// adjust plot and visual settings
 			int newCalculationDensity = settingsFrame.getCalculationDensity();
 			paintDensity = settingsFrame.getDensity();
 			coordinateLineDensity = settingsFrame.getCoordinatelineDensity();
@@ -270,6 +298,7 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 			paintHorizontalLines = settingsFrame.paintHorizontalLines();
 			paintVerticalLines = settingsFrame.paintVerticalLines();
 
+			// if something of these values changed, we need to recalculate the function
 			if (newFunction != function || newInputArea != inputArea || newCalculationDensity != calculationDensity) {
 
 				needToRecalculateFunction = true;
@@ -288,38 +317,54 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 	}
 
 	/**
-	 * for each point in INPUT_NUMBERAREA on the DENSITY, get a corresponding
-	 * functionValue and draw that on the JPanel. parallel it will draw a grid that
-	 * links the functionValue's that were in a rectangular grid in INPUT_NUMBERAREA
-	 * 
-	 * @param functionIndex defines which function is to be drawn
-	 * @param g             using Graphics to directly paint on the JPanel
+	 * load new calculation and plot settings and recalculate function if needed
 	 */
-	public void calculateFunctionPoints(int density) {
+	private void useNewSettings() {
 
-		Complex functionInput, functionOutput;
+		if (setPlotSettings()) {
+			calculateFunctionPoints(calculationDensity);
+		}
+
+		// give parameters to the canvas and repaint them
+		setupCanvas();
+		repaintCanvas();
+
+	}
+
+	/**
+	 * for each point in inputArea on the density, get a corresponding functionvalue
+	 * 
+	 * @param calculationDensity the density to calulate the points
+	 */
+	public void calculateFunctionPoints(int calculationDensity) {
+
+		Complex currentFunctionInput, currentFunctionOutput;
 		functionInputPoints = new ArrayList<Complex>();
 		functionOutputPoints = new ArrayList<Complex>();
 
 //		System.out.println("calculateFunctionPoints()");
 
 //		int xCounter = 0;
-		for (double x = getFirstXValue(); x <= inputArea[1] + 1.0 / density / 2; x += 1.0 / density) {
+		for (double x = getFirstXValue(); x <= inputArea[1] + 1.0 / calculationDensity / 2; x += 1.0
+				/ calculationDensity) {
 
 //			xCounter++;
 //			System.out.println("xCounter = " + xCounter);
 
-			for (double y = inputArea[2]; y <= inputArea[3] + 1.0 / density / 2; y += 1.0 / density) {
+			for (double y = inputArea[2]; y <= inputArea[3] + 1.0 / calculationDensity / 2; y += 1.0
+					/ calculationDensity) {
 
 //				System.out.println("x = " + x + " y = " + y);
 
 				// calculate function value f(z)
-				functionInput = new Complex(x, y, true);
-				functionOutput = calculate(functionInput, function);
+				currentFunctionInput = new Complex(x, y, true);
+				currentFunctionOutput = calculate(currentFunctionInput, function);
 
-				if (functionOutput != null) {
-					functionInputPoints.add(functionInput);
-					functionOutputPoints.add(functionOutput);
+				// if we couldnt calculate the current functionvalue, add a secret number so the
+				// grid stays squared
+				if (currentFunctionOutput != null) {
+					functionInputPoints.add(currentFunctionInput);
+					functionOutputPoints.add(currentFunctionOutput);
 				} else {
 					functionInputPoints.add(new Complex(secretNumber, secretNumber, true));
 					functionOutputPoints.add(new Complex(secretNumber, secretNumber, true));
@@ -332,27 +377,34 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 	}
 
 	/**
-	 * calculates f(z) with the given z
+	 * calculates f(z) with the given z, this function is recursive!
+	 * 
+	 * @param z        value of z in the given function, null if we divided by
+	 *                 something too small
+	 * @param function contains the function
+	 * @param return   returns the resulting value = function(z)
 	 */
-	private Complex calculate(Complex z, String input) {
+	private Complex calculate(Complex z, String function) {
 
 //	System.out.println("to calculate: " + input);
 
+		// test if a previous calculation returned null
 		if (z == null) {
 			return null;
 		}
 
-		Complex result = new Complex(0, 0, true);
-		int openBrackets = 0;
-		boolean bracketsRemoved;
+		Complex result = new Complex(0, 0, true); // will be returned
+		int openBrackets = 0; // counts the open brackets while we read through the string
+		boolean bracketsRemoved; // true if theres was nothing to do but removing brackets at start and end
 
 		do {
 
 			bracketsRemoved = false;
 
-			for (int i = 0; i < input.length(); i++) {
+			// for each character in function, look for + and -
+			for (int i = 0; i < function.length(); i++) {
 				// System.out.println(input.charAt(i) + " found");
-				switch (input.charAt(i)) {
+				switch (function.charAt(i)) {
 
 				case '(':
 					openBrackets++;
@@ -365,13 +417,13 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 				case '+':
 					if (openBrackets == 0) {
 
-						Complex number = calculate(z, input.substring(0, i));
+						Complex number = calculate(z, function.substring(0, i));
 
 						if (number == null) {
 							return null;
 						}
 
-						result = number.add(calculate(z, input.substring(i + 1, input.length())));
+						result = number.add(calculate(z, function.substring(i + 1, function.length())));
 						return result;
 					}
 					break;
@@ -379,13 +431,13 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 				case '-':
 					if (openBrackets == 0) {
 
-						Complex number = calculate(z, input.substring(0, i));
+						Complex number = calculate(z, function.substring(0, i));
 
 						if (number == null) {
 							return null;
 						}
 
-						result = number.subtract(calculate(z, input.substring(i + 1, input.length())));
+						result = number.subtract(calculate(z, function.substring(i + 1, function.length())));
 						return result;
 					}
 					break;
@@ -394,8 +446,9 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 
 			}
 
-			for (int i = input.length() - 1; i >= 0; i--) {
-				switch (input.charAt(i)) {
+			// if there wasnt a + or -, for each character in function, look for * and /
+			for (int i = function.length() - 1; i >= 0; i--) {
+				switch (function.charAt(i)) {
 
 				case '(':
 					openBrackets++;
@@ -407,22 +460,22 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 
 				case '*':
 					if (openBrackets == 0) {
-						Complex number = calculate(z, input.substring(0, i));
+						Complex number = calculate(z, function.substring(0, i));
 
 						if (number == null) {
 							return null;
 						}
 
-						result = calculate(z, input.substring(0, i))
-								.multiply(calculate(z, input.substring(i + 1, input.length())));
+						result = calculate(z, function.substring(0, i))
+								.multiply(calculate(z, function.substring(i + 1, function.length())));
 						return result;
 					}
 					break;
 
 				case '/':
 					if (openBrackets == 0) {
-						Complex numerator = calculate(z, input.substring(0, i));
-						Complex denumerator = calculate(z, input.substring(i + 1, input.length()));
+						Complex numerator = calculate(z, function.substring(0, i));
+						Complex denumerator = calculate(z, function.substring(i + 1, function.length()));
 
 						if (numerator == null) {
 							return null;
@@ -437,8 +490,10 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 				}
 			}
 
-			for (int i = 0; i < input.length(); i++) {
-				switch (input.charAt(i)) {
+			// if there wasnt a * or /, for each character in function, look for sin, cos
+			// and exp
+			for (int i = 0; i < function.length(); i++) {
+				switch (function.charAt(i)) {
 
 				case '(':
 					openBrackets++;
@@ -450,7 +505,7 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 
 				case 's':
 					if (openBrackets == 0) {
-						Complex argument = calculate(z, input.substring(i + 4, input.length() - 1));
+						Complex argument = calculate(z, function.substring(i + 4, function.length() - 1));
 						if (argument == null) {
 							return null;
 						}
@@ -461,7 +516,7 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 
 				case 'c':
 					if (openBrackets == 0) {
-						Complex argument = calculate(z, input.substring(i + 4, input.length() - 1));
+						Complex argument = calculate(z, function.substring(i + 4, function.length() - 1));
 						if (argument == null) {
 							return null;
 						}
@@ -472,7 +527,7 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 
 				case 'e':
 					if (openBrackets == 0) {
-						Complex argument = calculate(z, input.substring(i + 4, input.length() - 1));
+						Complex argument = calculate(z, function.substring(i + 4, function.length() - 1));
 						if (argument == null) {
 							return null;
 						}
@@ -484,17 +539,20 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 				}
 			}
 
-			if (input.charAt(0) == '(' && input.charAt(input.length() - 1) == ')') {
+			// if there was nothing to do, we need to remove brackets at start and end
+			if (function.charAt(0) == '(' && function.charAt(function.length() - 1) == ')') {
 //			System.out.println("removing brackets around " + input);
-				input = input.substring(1, input.length() - 1);
+				function = function.substring(1, function.length() - 1);
 				bracketsRemoved = true;
 //			System.out.println("new input: " + input);
 			}
 
 		} while (bracketsRemoved);
 
+		// if there also were no brackets to remove, we need to create a new complex
+		// number
 //	System.out.println("make a new Complex number from: " + input);
-		switch (input) {
+		switch (function) {
 
 		case "z":
 			return z;
@@ -503,28 +561,55 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 			return new Complex(0, 1, true);
 
 		default:
-			return new Complex(Double.parseDouble(input), 0, true);
+			System.out.println("CALCULATE: \t default switch case: should not be here");
+			return new Complex(Double.parseDouble(function), 0, true);
 		}
 
 	}
 
-	public static void main(String[] args) {
+	/**
+	 * returns the first number that finds place on a gridline or a gridline +-
+	 * factor / calculationDensity
+	 * 
+	 * @return smallest x value that is on gridline +- factor / calculationDensity
+	 */
+	private double getFirstXValue() {
 
-		// first shown function is function 2
-		new Gui("sin(z)");
+		double result; // to be retuned
+
+		// go above smallest gridline
+		if (inputArea[0] < 0) {
+			result = (int) inputArea[0];
+		} else {
+			result = 1 + (int) inputArea[0];
+		}
+
+		// subtract 1 / DENSITY as long as we are in the inputArea
+		while (result > inputArea[0]) {
+			result -= 1.0 / calculationDensity;
+		}
+		result += 1.0 / calculationDensity;
+
+		return result;
 
 	}
 
+	/* GETTERS */
+
+	/**
+	 * @return a square area that contains all inputPoints
+	 */
 	public double[] getInputAreaSquare() {
 
-		double[] result = new double[4];
+		double[] result = new double[4]; // will be returned
 
-		// return the square
+		// get the side of the square
 		double side = Math.max(
 				Math.max(Math.abs(functionInputPoints.get(0).getRe()), Math.abs(functionInputPoints.get(0).getIm())),
 				Math.max(Math.abs(functionInputPoints.get(functionInputPoints.size() - 1).getRe()),
 						Math.abs(functionInputPoints.get(functionInputPoints.size() - 1).getIm())));
 
+		// create the square
 		result[0] = -side;
 		result[2] = -side;
 
@@ -535,18 +620,33 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 
 	}
 
+	/**
+	 * @return outputArea set in the settingsFrame
+	 */
+	public int[] getOutputArea() {
+
+		return settingsFrame.getOutputArea();
+
+	}
+
+	/**
+	 * @return smallest possible square outputArea for the 2D plot that contains all
+	 *         outputPoints
+	 */
 	public int[] getOutputAreaSquare() {
 
-		int[] result = new int[4];
+		int[] result = new int[4]; // will be returned
 
+		// get the minimums and maximums
 		double minRe = Collections.min(functionOutputPoints.stream().map(e -> e.getRe()).collect(Collectors.toList()));
 		double maxRe = Collections.max(functionOutputPoints.stream().map(e -> e.getRe()).collect(Collectors.toList()));
 		double minIm = Collections.min(functionOutputPoints.stream().map(e -> e.getIm()).collect(Collectors.toList()));
 		double maxIm = Collections.max(functionOutputPoints.stream().map(e -> e.getIm()).collect(Collectors.toList()));
 
-		// return the square
+		// get the square side
 		double side = Math.max(Math.max(Math.abs(minRe), Math.abs(minIm)), Math.max(Math.abs(maxRe), Math.abs(maxIm)));
 
+		// create the square
 		result[0] = (int) (-side - 0.9999);
 		result[2] = (int) (-side - 0.9999);
 
@@ -556,66 +656,72 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 		return result;
 
 	}
-	
-	public int[] getOutputArea() {
-		
-		return settingsFrame.getOutputArea();
-		
-	}
-	
+
+	/**
+	 * @return calculationDensity set in the settingsPanel
+	 */
 	public int getCalculationDensity() {
 		return calculationDensity;
 	}
 
-	@Override
-	public void actionPerformed(ActionEvent e) {
-
-		System.out.println(e.getActionCommand());
-
-		switch (e.getActionCommand()) {
-
-		case "settings":
-			settingsFrame.setVisible(true);
-			break;
-
-		case "apply":
-			if (setPlotSettings()) {
-				calculateFunctionPoints(calculationDensity);
-			}
-			setupCanvas();
-			repaintCanvas();
-			break;
-		}
-
-	}
-	
+	/**
+	 * @return return the secretNumber
+	 */
 	public double getSecretNumber() {
 		return secretNumber;
 	}
 
+	/* IMPLEMENTED FUNCTIONS */
+
+	/**
+	 * actionListener for this class
+	 */
+	@Override
+	public void actionPerformed(ActionEvent e) {
+
+//		System.out.println(e.getActionCommand());
+
+		switch (e.getActionCommand()) {
+
+		case "settings": // show the settingsFrame
+			settingsFrame.setVisible(true);
+			break;
+
+		case "apply": // use the new settings
+			useNewSettings();
+			break;
+		}
+
+	}
+
+	/**
+	 * keyListener for this class, nothing done here so far
+	 */
 	@Override
 	public void keyTyped(KeyEvent e) {
 		// TODO Auto-generated method stub
 
 	}
 
+	/**
+	 * keyListener for this class
+	 */
 	@Override
 	public void keyPressed(KeyEvent e) {
 
-		System.out.println(e.getKeyCode() + " pressed");
-		
-		if(e.getKeyCode() == 10) {// enter pressed
-			
-			if (setPlotSettings()) {
-				calculateFunctionPoints(calculationDensity);
-			}
-			setupCanvas();
-			repaintCanvas();
-			
+//		System.out.println(e.getKeyCode() + " pressed");
+
+		if (e.getKeyCode() == 10) {// enter pressed, interpret as if "apply" was clicked, use the new settings
+
+			useNewSettings();
+
 		}
 
 	}
 
+	/**
+	 * keyListener for this class, nothing done here so far
+	 */
 	@Override
 	public void keyReleased(KeyEvent e) {
 		// TODO Auto-generated method stub

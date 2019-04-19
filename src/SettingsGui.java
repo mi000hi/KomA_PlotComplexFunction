@@ -12,6 +12,12 @@ import javax.swing.SpringLayout;
 import javax.swing.SpringLayout.Constraints;
 import javax.swing.SwingConstants;
 
+/**
+ * 
+ * THIS CLASS MAY BE DELETED, its unused for the program
+ * 
+ */
+
 public class SettingsGui extends JFrame {
 
 	private final Font FONT = new Font("Ubuntu", Font.PLAIN, 40); // font used on the panel
