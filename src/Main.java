@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
  * @author michael
  *
  */
-public class Main {
+public class Main extends ParentClass {
 
 //	public static void main(String[] args) {
 //        Map<Character, Thread> commands = new HashMap<>();
@@ -51,16 +51,16 @@ public class Main {
 //		System.out.println("f(z = " + z.getRe() + " + i(" + z.getIm() + ") ) = " + result.getRe() + " +\n\t + i(" + result.getIm() + ")");
 
 		Main main1 = new Main() {
-			private void printSomething() {
+			public void test() {
 				System.out.println("printing something else");
 			}
 		};
 		
 		Main main2 = new Main();
 		
-		main1.printSomething();
+		main1.test();
 		
-		main2.printSomething();
+		main2.test();
 		
 	}
 

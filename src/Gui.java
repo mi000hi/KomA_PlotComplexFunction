@@ -3,6 +3,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -41,6 +42,7 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 	private ArrayList<Complex> functionInputPoints, functionOutputPoints; // resulting input and output locations
 
 	private double secretNumber = -0.96875; // 0.11111 in binary TODO: remove?
+	private Point numberOfPoints; // number of points in x and y axis that have been calculated
 
 	private int calculationDensity, paintDensity; // will calculate/paint *Density^2 points in a 1x1 unit square
 	private int coordinateLineDensity; // draws one coordinateLine every coordinateLineDensity units
@@ -51,7 +53,7 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 
 	/**
 	 * will creaate a jframe of this class with the panels to plot the complex
-	 * function
+	 * function functionOutputPoints.add(new Complex(pointsInX, pointsInY, true));
 	 * 
 	 * @param args arguments from command line at startup, will be ignored
 	 */
@@ -86,10 +88,7 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 
 		// creating the different jpanels to draw on
 		locationCanvas = new Leinwand2D(this);
-		realPartCanvas = new Leinwand3D(this);
-		imaginaryPartCanvas = new Leinwand3D(this);
-		radiusCanvas = new Leinwand3D(this);
-		argumentCanvas = new Leinwand3D(this);
+		implement3DCanvas();
 
 		// prepare for plotting
 		setPlotSettings();
@@ -108,8 +107,75 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 		applySettingsButton.addActionListener(this);
 		functionInputField.addKeyListener(this);
 
+		useNewSettings();
+		
 		// show jframe
 		this.setVisible(true);
+
+	}
+
+	/**
+	 * implements the 4 3D canvas and overrides their getFunctionValue function so
+	 * that they plot what they should plot
+	 */
+	private void implement3DCanvas() {
+
+		realPartCanvas = new Leinwand3D(this) {
+			protected double getFunctionValue(int index) {
+
+				Complex complex = functionOutputPoints.get(index);
+
+				if (complex != null) {
+					return complex.getRe();
+				}
+				
+				System.out.println("returning secret number");
+				return secretNumber;
+
+			}
+		};
+		imaginaryPartCanvas = new Leinwand3D(this) {
+			protected double getFunctionValue(int index) {
+
+			Complex complex = functionOutputPoints.get(index);
+
+			if (complex != null) {
+				return complex.getIm();
+			}
+			
+			System.out.println("returning secret number");
+			return secretNumber;
+
+		}
+		};
+		radiusCanvas = new Leinwand3D(this) {
+			protected double getFunctionValue(int index) {
+
+			Complex complex = functionOutputPoints.get(index);
+
+			if (complex != null) {
+				return complex.getRadius();
+			}
+			
+			System.out.println("returning secret number");
+			return secretNumber;
+
+		}
+		};
+		argumentCanvas = new Leinwand3D(this) {
+			protected double getFunctionValue(int index) {
+
+			Complex complex = functionOutputPoints.get(index);
+
+			if (complex != null) {
+				return complex.getPhi();
+			}
+			
+			System.out.println("returning secret number");
+			return secretNumber;
+
+		}
+		};
 
 	}
 
@@ -127,33 +193,13 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 			settingsFrame.setOutputArea(outputArea);
 		}
 
-		ArrayList<Point3D> functionValues = new ArrayList<Point3D>();
-		for (int i = 0; i < functionInputPoints.size(); i++) {
-			functionValues.add(new Point3D(functionInputPoints.get(i).getRe(), functionInputPoints.get(i).getIm(),
-					functionOutputPoints.get(i).getRe()));
-		}
-		realPartCanvas.setFunctionValues(functionValues);
+		realPartCanvas.setFunctionValues(functionInputPoints, functionOutputPoints);
 
-		functionValues = new ArrayList<Point3D>();
-		for (int i = 0; i < functionInputPoints.size(); i++) {
-			functionValues.add(new Point3D(functionInputPoints.get(i).getRe(), functionInputPoints.get(i).getIm(),
-					functionOutputPoints.get(i).getIm()));
-		}
-		imaginaryPartCanvas.setFunctionValues(functionValues);
+		imaginaryPartCanvas.setFunctionValues(functionInputPoints, functionOutputPoints);
 
-		functionValues = new ArrayList<Point3D>();
-		for (int i = 0; i < functionInputPoints.size(); i++) {
-			functionValues.add(new Point3D(functionInputPoints.get(i).getRe(), functionInputPoints.get(i).getIm(),
-					functionOutputPoints.get(i).getRadius()));
-		}
-		radiusCanvas.setFunctionValues(functionValues);
+		radiusCanvas.setFunctionValues(functionInputPoints, functionOutputPoints);
 
-		functionValues = new ArrayList<Point3D>();
-		for (int i = 0; i < functionInputPoints.size(); i++) {
-			functionValues.add(new Point3D(functionInputPoints.get(i).getRe(), functionInputPoints.get(i).getIm(),
-					functionOutputPoints.get(i).getPhi()));
-		}
-		argumentCanvas.setFunctionValues(functionValues);
+		argumentCanvas.setFunctionValues(functionInputPoints, functionOutputPoints);
 
 		// calculate functionPoints for 2D canvas
 		calculateFunctionPoints(paintDensity);
@@ -175,8 +221,8 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 		radiusCanvas.setTitle("| " + function + " |");
 		argumentCanvas.setTitle("Arg( " + function + " )");
 
-		locationCanvas.setPlotSettings(paintDensity, coordinateLineDensity, dotWidth,
-				paintLocationDots, paintHorizontalLines, paintVerticalLines);
+		locationCanvas.setPlotSettings(paintDensity, coordinateLineDensity, dotWidth, paintLocationDots,
+				paintHorizontalLines, paintVerticalLines);
 
 		// plotting 3D plots as a grid
 //		realPartCanvas.setPlotSettings(dotWidth, false, true);
@@ -201,9 +247,9 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 
 		locationCanvas.repaint();
 		realPartCanvas.repaint();
-		imaginaryPartCanvas.repaint();
-		radiusCanvas.repaint();
-		argumentCanvas.repaint();
+//		imaginaryPartCanvas.repaint();
+//		radiusCanvas.repaint();
+//		argumentCanvas.repaint();
 
 	}
 
@@ -342,17 +388,24 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 		functionInputPoints = new ArrayList<Complex>();
 		functionOutputPoints = new ArrayList<Complex>();
 
+		int pointsInX = 0, pointsInY = 0; // counts how many points are in x and y direction
+
 //		System.out.println("calculateFunctionPoints()");
 
 //		int xCounter = 0;
 		for (double x = getFirstXValue(); x <= inputArea[1] + 1.0 / calculationDensity / 2; x += 1.0
 				/ calculationDensity) {
 
+			pointsInX++;
+			pointsInY = 0;
+
 //			xCounter++;
 //			System.out.println("xCounter = " + xCounter);
 
 			for (double y = inputArea[2]; y <= inputArea[3] + 1.0 / calculationDensity / 2; y += 1.0
 					/ calculationDensity) {
+
+				pointsInY++;
 
 //				System.out.println("x = " + x + " y = " + y);
 
@@ -365,14 +418,16 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 				if (currentFunctionOutput != null) {
 					functionInputPoints.add(currentFunctionInput);
 					functionOutputPoints.add(currentFunctionOutput);
-				} else {
-					functionInputPoints.add(new Complex(secretNumber, secretNumber, true));
-					functionOutputPoints.add(new Complex(secretNumber, secretNumber, true));
+				} else { // TODO: remove if it works
+					functionInputPoints.add(null);
+					functionOutputPoints.add(null);
 				}
 
 			}
 
 		}
+
+		numberOfPoints = new Point(pointsInX, pointsInY);
 
 	}
 
@@ -588,7 +643,6 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 		while (result > inputArea[0]) {
 			result -= 1.0 / calculationDensity;
 		}
-		result += 1.0 / calculationDensity;
 
 		return result;
 
@@ -669,6 +723,13 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 	 */
 	public double getSecretNumber() {
 		return secretNumber;
+	}
+
+	/**
+	 * @return return number of points
+	 */
+	public Point getNumberOfPoints() {
+		return numberOfPoints;
 	}
 
 	/* IMPLEMENTED FUNCTIONS */
