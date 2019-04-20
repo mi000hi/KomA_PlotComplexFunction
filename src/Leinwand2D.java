@@ -133,7 +133,7 @@ public class Leinwand2D extends JPanel {
 
 						if (paintVerticalLines) {
 
-							g.setColor(getColor2(x, 0, numberOfPoints.y - 1));
+							g.setColor(getColor2(x, 0, numberOfPoints.x));
 							g.drawLine(lastPoint.x, lastPoint.y, currentPoint.x, currentPoint.y);
 						}
 						if (paintFunctionPoints) {

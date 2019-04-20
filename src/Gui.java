@@ -241,9 +241,9 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 
 		locationCanvas.repaint();
 		realPartCanvas.repaint();
-//		imaginaryPartCanvas.repaint();
-//		radiusCanvas.repaint();
-//		argumentCanvas.repaint();
+		imaginaryPartCanvas.repaint();
+		radiusCanvas.repaint();
+		argumentCanvas.repaint();
 
 	}
 
