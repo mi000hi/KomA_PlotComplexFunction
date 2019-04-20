@@ -107,19 +107,18 @@ public class Leinwand2D extends JPanel {
 
 		boolean startNewLine = false; // is false while we draw all y coordinates at a fixed x coordinate
 
-		int pointsInXDirection = 1 + (int) (Math.abs(inputArea[0]) + Math.abs(inputArea[1])) * density;
-		int pointsInYDirection = 1 + (int) ((Math.abs(inputArea[2]) + Math.abs(inputArea[3])) * density);
+		Point numberOfPoints = parent.getNumberOfPoints();
 
 //		System.out.println(pointsInXDirection + " x " + pointsInYDirection + " = " + outputPoints.size() + " points");
 
-		for (int x = 0; x < pointsInXDirection; x++) {
+		for (int x = 0; x < numberOfPoints.x; x++) {
 
 			startNewLine = true;
 
-			for (int y = 0; y < pointsInYDirection; y++) {
+			for (int y = 0; y < numberOfPoints.y; y++) {
 
-				if (x * pointsInYDirection + y < outputPoints.size()) {
-					functionValue = outputPoints.get(x * pointsInYDirection + y);
+				if (x * numberOfPoints.y + y < outputPoints.size()) {
+					functionValue = outputPoints.get(x * numberOfPoints.y + y);
 
 					if (functionValue.getRe() != parent.getSecretNumber()) {
 
@@ -134,7 +133,7 @@ public class Leinwand2D extends JPanel {
 
 						if (paintVerticalLines) {
 
-							g.setColor(getColor2(x, 0, pointsInXDirection - 1));
+							g.setColor(getColor2(x, 0, numberOfPoints.y - 1));
 							g.drawLine(lastPoint.x, lastPoint.y, currentPoint.x, currentPoint.y);
 						}
 						if (paintFunctionPoints) {
@@ -152,15 +151,15 @@ public class Leinwand2D extends JPanel {
 		}
 
 		if (paintHorizontalLines) {
-			for (int y = 0; y < pointsInYDirection; y++) {
+			for (int y = 0; y < numberOfPoints.y; y++) {
 
 				startNewLine = true;
-				g.setColor(getColor(y, 0, pointsInYDirection - 1));
+				g.setColor(getColor(y, 0, numberOfPoints.y - 1));
 
-				for (int x = 0; x < pointsInXDirection; x++) {
+				for (int x = 0; x < numberOfPoints.x; x++) {
 
-					if (x * pointsInYDirection + y < outputPoints.size()) {
-						functionValue = outputPoints.get(x * pointsInYDirection + y);
+					if (x * numberOfPoints.y + y < outputPoints.size()) {
+						functionValue = outputPoints.get(x * numberOfPoints.y + y);
 
 						if (functionValue.getRe() != parent.getSecretNumber()) {
 

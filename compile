@@ -1,0 +1,2 @@
+# compile all java files in ./src/
+javac -g -d ./bin/ ./src/*.java
