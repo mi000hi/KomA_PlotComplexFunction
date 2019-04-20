@@ -111,16 +111,16 @@ public class Leinwand2D extends JPanel {
 
 //		System.out.println(pointsInXDirection + " x " + pointsInYDirection + " = " + outputPoints.size() + " points");
 
-		for (int x = 0; x < numberOfPoints.x; x++) {
+		for (int x = 0; x < numberOfPoints.x; x += density) {
 
 			startNewLine = true;
 
-			for (int y = 0; y < numberOfPoints.y; y++) {
+			for (int y = 0; y < numberOfPoints.y; y += density) {
 
 				if (x * numberOfPoints.y + y < outputPoints.size()) {
 					functionValue = outputPoints.get(x * numberOfPoints.y + y);
 
-					if (functionValue.getRe() != parent.getSecretNumber()) {
+					if (functionValue != null && functionValue.getRe() != parent.getSecretNumber()) {
 
 						if (startNewLine) {
 							currentPoint = getPointAt(functionValue.getRe(), functionValue.getIm());
@@ -151,17 +151,17 @@ public class Leinwand2D extends JPanel {
 		}
 
 		if (paintHorizontalLines) {
-			for (int y = 0; y < numberOfPoints.y; y++) {
+			for (int y = 0; y < numberOfPoints.y; y += density) {
 
 				startNewLine = true;
 				g.setColor(getColor(y, 0, numberOfPoints.y - 1));
 
-				for (int x = 0; x < numberOfPoints.x; x++) {
+				for (int x = 0; x < numberOfPoints.x; x += density) {
 
 					if (x * numberOfPoints.y + y < outputPoints.size()) {
 						functionValue = outputPoints.get(x * numberOfPoints.y + y);
 
-						if (functionValue.getRe() != parent.getSecretNumber()) {
+						if (functionValue != null && functionValue.getRe() != parent.getSecretNumber()) {
 
 							if (startNewLine) {
 								currentPoint = getPointAt(functionValue.getRe(), functionValue.getIm());

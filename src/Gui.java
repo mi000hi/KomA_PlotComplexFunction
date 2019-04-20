@@ -108,7 +108,7 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 		functionInputField.addKeyListener(this);
 
 		useNewSettings();
-		
+
 		// show jframe
 		this.setVisible(true);
 
@@ -128,8 +128,8 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 				if (complex != null) {
 					return complex.getRe();
 				}
-				
-				System.out.println("returning secret number");
+
+//				System.out.println("returning secret number");
 				return secretNumber;
 
 			}
@@ -137,44 +137,44 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 		imaginaryPartCanvas = new Leinwand3D(this) {
 			protected double getFunctionValue(int index) {
 
-			Complex complex = functionOutputPoints.get(index);
+				Complex complex = functionOutputPoints.get(index);
 
-			if (complex != null) {
-				return complex.getIm();
+				if (complex != null) {
+					return complex.getIm();
+				}
+
+//				System.out.println("returning secret number");
+				return secretNumber;
+
 			}
-			
-			System.out.println("returning secret number");
-			return secretNumber;
-
-		}
 		};
 		radiusCanvas = new Leinwand3D(this) {
 			protected double getFunctionValue(int index) {
 
-			Complex complex = functionOutputPoints.get(index);
+				Complex complex = functionOutputPoints.get(index);
 
-			if (complex != null) {
-				return complex.getRadius();
+				if (complex != null) {
+					return complex.getRadius();
+				}
+
+//				System.out.println("returning secret number");
+				return secretNumber;
+
 			}
-			
-			System.out.println("returning secret number");
-			return secretNumber;
-
-		}
 		};
 		argumentCanvas = new Leinwand3D(this) {
 			protected double getFunctionValue(int index) {
 
-			Complex complex = functionOutputPoints.get(index);
+				Complex complex = functionOutputPoints.get(index);
 
-			if (complex != null) {
-				return complex.getPhi();
+				if (complex != null) {
+					return complex.getPhi();
+				}
+
+//				System.out.println("returning secret number");
+				return secretNumber;
+
 			}
-			
-			System.out.println("returning secret number");
-			return secretNumber;
-
-		}
 		};
 
 	}
@@ -185,8 +185,7 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 	 */
 	private void setupCanvas() {
 
-		// TODO: optimize
-		long time = System.currentTimeMillis(); // measure time to see if this is very inefficient
+//		long time = System.currentTimeMillis(); // measure time to see if this is very inefficient
 
 		if (outputArea == null) {
 			outputArea = getOutputAreaSquare();
@@ -194,21 +193,16 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 		}
 
 		realPartCanvas.setFunctionValues(functionInputPoints, functionOutputPoints);
-
 		imaginaryPartCanvas.setFunctionValues(functionInputPoints, functionOutputPoints);
-
 		radiusCanvas.setFunctionValues(functionInputPoints, functionOutputPoints);
-
 		argumentCanvas.setFunctionValues(functionInputPoints, functionOutputPoints);
-
-		// calculate functionPoints for 2D canvas
-		calculateFunctionPoints(paintDensity);
 
 		// this will also set inputArea and outputArea of locationCanvas
 		locationCanvas.setFunctionValues(functionInputPoints, functionOutputPoints);
 
 		// set jpanel sizes
-		Dimension smallCanvas = new Dimension(this.getSize().width / 4, (this.getSize().height - 100) / 2);
+		// TODO: adjust sizes correctly
+		Dimension smallCanvas = new Dimension(this.getSize().width / 4, (this.getSize().height - 150) / 2);
 //		locationCanvas.setSize(this.getSize().width / 2, this.getSize().height - 100);
 		realPartCanvas.setSize(smallCanvas);
 		imaginaryPartCanvas.setSize(smallCanvas);
@@ -236,7 +230,7 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 		radiusCanvas.setPlotSettings(circleWidth, true, false);
 		argumentCanvas.setPlotSettings(circleWidth, true, false);
 
-		System.out.println("SETUPCANVAS: \t distributing values took " + (System.currentTimeMillis() - time) + "ms");
+//		System.out.println("SETUPCANVAS: \t distributing values took " + (System.currentTimeMillis() - time) + "ms");
 
 	}
 
@@ -317,7 +311,7 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 			inputArea = new double[] { -2, 2, -2, 2 };
 
 			calculationDensity = 50;
-			paintDensity = 10;
+			paintDensity = 5;
 			coordinateLineDensity = 1;
 			dotWidth = 3;
 			circleWidth = 5;
@@ -340,6 +334,7 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 			paintDensity = settingsFrame.getDensity();
 			coordinateLineDensity = settingsFrame.getCoordinatelineDensity();
 			dotWidth = settingsFrame.getDotWidth();
+			circleWidth = settingsFrame.getCircleWidth();
 			paintLocationDots = settingsFrame.paintFunctionPoints();
 			paintHorizontalLines = settingsFrame.paintHorizontalLines();
 			paintVerticalLines = settingsFrame.paintVerticalLines();
@@ -616,7 +611,8 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 			return new Complex(0, 1, true);
 
 		default:
-			System.out.println("CALCULATE: \t default switch case: should not be here");
+//			System.out.println(
+//					"CALCULATE: \t default switch case: creating complex from " + Double.parseDouble(function));
 			return new Complex(Double.parseDouble(function), 0, true);
 		}
 
@@ -692,11 +688,31 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 		int[] result = new int[4]; // will be returned
 
 		// get the minimums and maximums
-		double minRe = Collections.min(functionOutputPoints.stream().map(e -> e.getRe()).collect(Collectors.toList()));
-		double maxRe = Collections.max(functionOutputPoints.stream().map(e -> e.getRe()).collect(Collectors.toList()));
-		double minIm = Collections.min(functionOutputPoints.stream().map(e -> e.getIm()).collect(Collectors.toList()));
-		double maxIm = Collections.max(functionOutputPoints.stream().map(e -> e.getIm()).collect(Collectors.toList()));
+		// they do not work anymore cause we put null into functionOutputPoints...
+//		double minRe = Collections.min(functionOutputPoints.stream().map(e -> e.getRe()).collect(Collectors.toList()));
+//		double maxRe = Collections.max(functionOutputPoints.stream().map(e -> e.getRe()).collect(Collectors.toList()));
+//		double minIm = Collections.min(functionOutputPoints.stream().map(e -> e.getIm()).collect(Collectors.toList()));
+//		double maxIm = Collections.max(functionOutputPoints.stream().map(e -> e.getIm()).collect(Collectors.toList()));
 
+		double minRe = functionOutputPoints.get(0).getRe(), maxRe = minRe, minIm = functionOutputPoints.get(0).getIm(),
+				maxIm = minIm;
+		Complex currentComplex;
+		for(int i = 0; i < functionOutputPoints.size(); i++) {
+			currentComplex = functionOutputPoints.get(i);
+			if(currentComplex != null) {
+				if(currentComplex.getRe() < minRe) {
+					minRe = currentComplex.getRe();
+				} else if(currentComplex.getRe() > maxRe) {
+					maxRe = currentComplex.getRe();
+				}
+				if(currentComplex.getIm() < minIm) {
+					minIm = currentComplex.getIm();
+				} else if(currentComplex.getIm() > maxIm) {
+					maxIm = currentComplex.getIm();
+				}
+			}
+		}
+		
 		// get the square side
 		double side = Math.max(Math.max(Math.abs(minRe), Math.abs(minIm)), Math.max(Math.abs(maxRe), Math.abs(maxIm)));
 
@@ -730,6 +746,34 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 	 */
 	public Point getNumberOfPoints() {
 		return numberOfPoints;
+	}
+
+	/**
+	 * @return return paintDensity
+	 */
+	public int getPaintDensity() {
+		return paintDensity;
+	}
+
+	/**
+	 * @return return coordinateline density
+	 */
+	public int getCoordinatelineDensity() {
+		return coordinateLineDensity;
+	}
+
+	/**
+	 * @return return dotWidth
+	 */
+	public int getDotWidth() {
+		return dotWidth;
+	}
+
+	/**
+	 * @return return circleWidth
+	 */
+	public int getCircleWidth() {
+		return circleWidth;
 	}
 
 	/* IMPLEMENTED FUNCTIONS */

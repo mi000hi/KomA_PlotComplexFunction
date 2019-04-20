@@ -135,15 +135,62 @@ public class Leinwand3D extends ParentLeinwand3D {
 			for (int x = 0; x < numberOfPoints.x; x++) {
 
 				startNewLine = true;
+				currentY = (int) inputArea[2];
+				
+				// draw horizontal coordinate system lines
+				if(functionInputPoints.get(x * numberOfPoints.y).getRe() - currentX > 0) {
+					lineStart = new Point3D(currentX, inputArea[2], 0);
+					lineEnd = new Point3D(currentX, inputArea[3], 0);
+
+					lineStart2 = get2DScreenCoordinates(lineStart);
+					lineEnd2 = get2DScreenCoordinates(lineEnd);
+
+					if (currentX == 0) {
+						g.setColor(Color.WHITE);
+						g.fillRect(lineStart2.x, lineStart2.y + 1, lineEnd2.x - lineStart2.x, 2);
+					} else {
+						g.setColor(Color.GRAY);
+						g.fillRect(lineStart2.x, lineStart2.y, lineEnd2.x - lineStart2.x, 1);
+					}
+					
+					currentX++;
+				}
 
 				for (int y = 0; y < numberOfPoints.y; y++) {
-
+					
 //					System.out.println("x, y: " + x + ", " + y);
 					currentFunctionValue = getFunctionValue(x * numberOfPoints.y + y);
 					currentInputValue = functionInputPoints.get(x * numberOfPoints.y + y);
 					
+					if(currentInputValue == null) {
+						continue;
+					}
+					
 					currentPoint3D = new Point3D(currentInputValue.getRe(), currentInputValue.getIm(), currentFunctionValue);
 
+					if(currentPoint3D.getY() - currentY > 0) {
+						
+						Point point = get2DScreenCoordinates(new Point3D(currentPoint3D.getX(), currentPoint3D.getY(), 0));
+						
+						g.setColor(Color.WHITE);
+						if (currentY == 0) {
+							g.setColor(Color.WHITE);
+							g.fillRect(point.x, point.y, 2, 2);
+							
+							// draw z axis
+							if(currentX == 0) {
+								point = get2DScreenCoordinates(new Point3D(0, 0, 1.2 * maxZ));
+								
+								g.fillRect(point.x - 1, point.y, 3, zero.y - point.y);
+							}
+						} else {
+							g.setColor(Color.GRAY);
+							g.fillRect(point.x, point.y, 1, 1);
+						}
+						
+						currentY++;
+					}
+					
 					if (currentFunctionValue <= maxZ && currentFunctionValue >= minZ) {
 						if (currentFunctionValue != parent.getSecretNumber()) {
 
@@ -158,7 +205,7 @@ public class Leinwand3D extends ParentLeinwand3D {
 
 							g.setColor(getColor(currentFunctionValue, minZ, maxZ));
 
-							g.fillOval(currentPoint2D.x, currentPoint2D.y, circleWidth, circleWidth);
+							g.fillOval(currentPoint2D.x - circleWidth / 2, currentPoint2D.y - circleWidth / 2, circleWidth, circleWidth);
 //							g.drawLine(lastPoint2D.x, lastPoint2D.y, currentPoint2D.x, currentPoint2D.y);
 
 						} else {
