@@ -8,6 +8,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.stream.Collectors;
@@ -49,6 +50,9 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 	private int dotWidth, circleWidth; // width of dots in 2D plot and width of circles in 3D plot
 	private boolean paintLocationDots, paintHorizontalLines, paintVerticalLines; // whether to paint these things or not
 																					// on 2D canvas
+	private boolean paintBackgroundImage; // paint background image on 2d canvas?
+	private BufferedImage backgroundImage;
+
 	/* MAIN FUNCTION */
 
 	/**
@@ -216,7 +220,7 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 		argumentCanvas.setTitle("Arg( " + function + " )");
 
 		locationCanvas.setPlotSettings(paintDensity, coordinateLineDensity, dotWidth, paintLocationDots,
-				paintHorizontalLines, paintVerticalLines);
+				paintHorizontalLines, paintVerticalLines, paintBackgroundImage);
 
 		// plotting 3D plots as a grid
 //		realPartCanvas.setPlotSettings(dotWidth, false, true);
@@ -244,6 +248,9 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 		imaginaryPartCanvas.repaint();
 		radiusCanvas.repaint();
 		argumentCanvas.repaint();
+		
+		// repaint editor
+		settingsFrame.repaintEditor();
 
 	}
 
@@ -318,6 +325,7 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 			paintLocationDots = false;
 			paintHorizontalLines = true;
 			paintVerticalLines = true;
+			paintBackgroundImage = true;
 
 			needToRecalculateFunction = true;
 
@@ -338,9 +346,12 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 			paintLocationDots = settingsFrame.paintFunctionPoints();
 			paintHorizontalLines = settingsFrame.paintHorizontalLines();
 			paintVerticalLines = settingsFrame.paintVerticalLines();
+			BufferedImage newBackgroundImage = settingsFrame.getBackgroundImage();
+			paintBackgroundImage = settingsFrame.paint2DCanvasBackgroundImage();
 
 			// if something of these values changed, we need to recalculate the function
-			if (newFunction != function || newInputArea != inputArea || newCalculationDensity != calculationDensity) {
+			if (newFunction != function || newInputArea != inputArea || newCalculationDensity != calculationDensity
+					|| newBackgroundImage != backgroundImage) {
 
 				needToRecalculateFunction = true;
 
@@ -348,6 +359,7 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 				titleLabel.setText("f(z) = " + function);
 				inputArea = newInputArea;
 				calculationDensity = newCalculationDensity;
+				backgroundImage = newBackgroundImage;
 
 			}
 
@@ -434,7 +446,7 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 	 * @param function contains the function
 	 * @param return   returns the resulting value = function(z)
 	 */
-	private Complex calculate(Complex z, String function) {
+	public Complex calculate(Complex z, String function) {
 
 //	System.out.println("to calculate: " + input);
 
@@ -479,9 +491,17 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 					break;
 
 				case '-':
+//					System.out.println("GUI: \t i = " + i + ", function: " + function);
 					if (openBrackets == 0) {
 
-						Complex number = calculate(z, function.substring(0, i));
+						Complex number;
+
+						// case "-n"
+						if (i == 0) {
+							number = new Complex(0, 0, true);
+						} else {
+							number = calculate(z, function.substring(0, i));
+						}
 
 						if (number == null) {
 							return null;
@@ -553,13 +573,21 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 					openBrackets--;
 					break;
 
-				case 's':
+				case 's': // sin or sqrt
 					if (openBrackets == 0) {
-						Complex argument = calculate(z, function.substring(i + 4, function.length() - 1));
-						if (argument == null) {
-							return null;
+
+						// TODO: sqrt for complex functions
+						if (function.charAt(i + 1) == 'q') { // this sqrt function will return sqrt(Re(z))
+							result = new Complex(
+									Math.sqrt(calculate(z, function.substring(i + 5, function.length() - 1)).getRe()),
+									0, true);
+						} else {
+							Complex argument = calculate(z, function.substring(i + 4, function.length() - 1));
+							if (argument == null) {
+								return null;
+							}
+							result = argument.sin();
 						}
-						result = argument.sin();
 						return result;
 					}
 					break;
@@ -611,8 +639,7 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 			return new Complex(0, 1, true);
 
 		default:
-//			System.out.println(
-//					"CALCULATE: \t default switch case: creating complex from " + Double.parseDouble(function));
+//			System.out.println("CALCULATE: \t creating complex from " + function);
 			return new Complex(Double.parseDouble(function), 0, true);
 		}
 
@@ -697,22 +724,22 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 		double minRe = functionOutputPoints.get(0).getRe(), maxRe = minRe, minIm = functionOutputPoints.get(0).getIm(),
 				maxIm = minIm;
 		Complex currentComplex;
-		for(int i = 0; i < functionOutputPoints.size(); i++) {
+		for (int i = 0; i < functionOutputPoints.size(); i++) {
 			currentComplex = functionOutputPoints.get(i);
-			if(currentComplex != null) {
-				if(currentComplex.getRe() < minRe) {
+			if (currentComplex != null) {
+				if (currentComplex.getRe() < minRe) {
 					minRe = currentComplex.getRe();
-				} else if(currentComplex.getRe() > maxRe) {
+				} else if (currentComplex.getRe() > maxRe) {
 					maxRe = currentComplex.getRe();
 				}
-				if(currentComplex.getIm() < minIm) {
+				if (currentComplex.getIm() < minIm) {
 					minIm = currentComplex.getIm();
-				} else if(currentComplex.getIm() > maxIm) {
+				} else if (currentComplex.getIm() > maxIm) {
 					maxIm = currentComplex.getIm();
 				}
 			}
 		}
-		
+
 		// get the square side
 		double side = Math.max(Math.max(Math.abs(minRe), Math.abs(minIm)), Math.max(Math.abs(maxRe), Math.abs(maxIm)));
 
@@ -774,6 +801,13 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 	 */
 	public int getCircleWidth() {
 		return circleWidth;
+	}
+
+	/**
+	 * 
+	 */
+	public BufferedImage getBackgroundImage() {
+		return backgroundImage;
 	}
 
 	/* IMPLEMENTED FUNCTIONS */

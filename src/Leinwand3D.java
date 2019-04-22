@@ -41,7 +41,7 @@ public class Leinwand3D extends ParentLeinwand3D {
 		this.parent = parent;
 
 		// initialize final variables
-		MARGIN = 50;
+		MARGIN = 5;
 
 		// add a title label to this jpanel
 		titleLabel = new JLabel();
