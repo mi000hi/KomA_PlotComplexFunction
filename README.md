@@ -29,4 +29,4 @@ run the program
   run the `./run` or `./runWindows` file  
   or use `java -cp ./bin/ Gui`
 
-HAVE FUN and lets improve :)
+# HAVE FUN and lets improve :)
