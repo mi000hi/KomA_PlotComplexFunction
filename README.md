@@ -32,7 +32,7 @@ compile the program
   or use `javac -g -d ./bin/ ./src/*.java`
   
 run the program  
-  run the `./run` or `./runWindows` file  
+  run the `./run` or `./runWindows.bat` file  
   or use `java -cp ./bin/ Gui`
 
 # HAVE FUN and lets improve :)
