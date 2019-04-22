@@ -12,6 +12,12 @@ something determining Re(...), Im(...), Radius(...) and Arg(...).
 in the settings you are able to change how the function is painted or calculated and you can define some functions in the input
 numberarea that you would like to see transformed on the Leinwand2D canvas.
 
+In the function input field you can use `sin(), cos()` and `exp()`, `z` as the complex input number, `doubles` and `+, -, *, /`
+In the input function field for the function to track the transformation, you can use the above, with `x` as function input value,
+the options mentioned above and `sqrt()`. The color input format in the field next to the previous used field is `red, green, blue`
+
+Using doubles in some places can cause errors.
+
 # INSTALLATION
 it should run on windows and maxOS, also the layout will definitely not be perfect because im using i3
 
