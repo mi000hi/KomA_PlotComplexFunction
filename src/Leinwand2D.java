@@ -255,7 +255,10 @@ public class Leinwand2D extends JPanel {
 					currentPoint = currentTransformedFunction.get(j);
 					
 //					System.out.println("LEINWAND2D: \t drawing point at " + currentPoint.getRe() + " + i(" + currentPoint.getIm() + ")");
-					drawPointAt(currentPoint.getRe(), currentPoint.getIm(), g, currentColor);
+					
+					if(currentPoint != null) {
+						drawPointAt(currentPoint.getRe(), currentPoint.getIm(), g, currentColor);
+					}
 					
 				}
 
