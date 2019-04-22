@@ -12,10 +12,10 @@ something determining Re(...), Im(...), Radius(...) and Arg(...).
 in the settings you are able to change how the function is painted or calculated and you can define some functions in the input
 numberarea that you would like to see transformed on the Leinwand2D canvas.
 
-'''INSTALLATION
+#INSTALLATION
 it should run on windows and maxOS, also the layout will definitely not be perfect because im using i3
 
-install java (https://wiki.archlinux.org/index.php/java): sudo pacman -S jdk-openjdk
+install java (https://wiki.archlinux.org/index.php/java): '''sudo pacman -S jdk-openjdk'''
 install git (https://wiki.archlinux.org/index.php/Git): sudo pacman -S git
 
 change to desired program location, this will create a folder called "KomA_PlotComplexFunction"
