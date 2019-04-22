@@ -102,7 +102,7 @@ public class SettingsGui2 extends JFrame implements ActionListener {
 		layout.addLayoutComponent(functionField, functionFieldCons);
 
 		JLabel functionFieldInfoLabel = new JLabel(
-				"example function: f(z) = (sin(z)*cos(z) + 1) * exp(z / (0 - i) + 2 * i) - 2");
+				"example function: f(z) = (sin(z)*cos(z) + 1) * exp(z / (- i) + 2 * i) - 2");
 		functionFieldInfoLabel.setFont(INFOFONT);
 		SpringLayout.Constraints functionFieldInfoLabelCons = new Constraints(functionFieldInfoLabel);
 		functionFieldInfoLabelCons.setWidth(Spring.constant((int) (0.85 * this.getSize().width)));
@@ -230,7 +230,7 @@ public class SettingsGui2 extends JFrame implements ActionListener {
 		calculationDensityCons.setY(calculationDensityLabelCons.getConstraint(SpringLayout.NORTH));
 		layout.addLayoutComponent(calculationDensity, calculationDensityCons);
 
-		JLabel densityLabel = new JLabel("dots to paint in n..n+1: ");
+		JLabel densityLabel = new JLabel("paint one dot per n calculated dots: ");
 		densityLabel.setFont(FONT);
 		SpringLayout.Constraints densityLabelCons = new Constraints(densityLabel);
 		densityLabelCons.setWidth(Spring.constant((int) (0.8 * this.getSize().width)));
@@ -257,7 +257,7 @@ public class SettingsGui2 extends JFrame implements ActionListener {
 		densityInfoLabelCons.setY(densityCons.getConstraint(SpringLayout.SOUTH));
 		layout.addLayoutComponent(densityInfoLabel, densityInfoLabelCons);
 
-		JLabel coordinatelineDensityLabel = new JLabel("coordinate lines to draw between n..n+1: ");
+		JLabel coordinatelineDensityLabel = new JLabel("draw one coordinate line every n steps: ");
 		coordinatelineDensityLabel.setFont(FONT);
 		SpringLayout.Constraints coordinatelineDensityLabelCons = new Constraints(coordinatelineDensityLabel);
 		coordinatelineDensityLabelCons.setWidth(Spring.constant((int) (0.8 * this.getSize().width)));
