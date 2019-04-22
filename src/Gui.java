@@ -52,6 +52,9 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 																					// on 2D canvas
 	private boolean paintBackgroundImage; // paint background image on 2d canvas?
 	private BufferedImage backgroundImage;
+	private ArrayList<String> functions; // functions to be transformed
+	private ArrayList<Color> colors; // colors of the functions to be transformed
+	private ArrayList<ArrayList<Complex>> transformedFunctionOutputPoints;
 
 	/* MAIN FUNCTION */
 
@@ -202,7 +205,8 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 		argumentCanvas.setFunctionValues(functionInputPoints, functionOutputPoints);
 
 		// this will also set inputArea and outputArea of locationCanvas
-		locationCanvas.setFunctionValues(functionInputPoints, functionOutputPoints);
+		locationCanvas.setFunctionValues(functionInputPoints, functionOutputPoints, transformedFunctionOutputPoints,
+				colors);
 
 		// set jpanel sizes
 		// TODO: adjust sizes correctly
@@ -248,7 +252,7 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 		imaginaryPartCanvas.repaint();
 		radiusCanvas.repaint();
 		argumentCanvas.repaint();
-		
+
 		// repaint editor
 		settingsFrame.repaintEditor();
 
@@ -348,10 +352,12 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 			paintVerticalLines = settingsFrame.paintVerticalLines();
 			BufferedImage newBackgroundImage = settingsFrame.getBackgroundImage();
 			paintBackgroundImage = settingsFrame.paint2DCanvasBackgroundImage();
+			ArrayList<String> newFunctions = settingsFrame.getInputFunctions();
+			colors = settingsFrame.getInputFunctionColors();
 
 			// if something of these values changed, we need to recalculate the function
 			if (newFunction != function || newInputArea != inputArea || newCalculationDensity != calculationDensity
-					|| newBackgroundImage != backgroundImage) {
+					|| newBackgroundImage != backgroundImage || newFunctions != functions) {
 
 				needToRecalculateFunction = true;
 
@@ -360,6 +366,7 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 				inputArea = newInputArea;
 				calculationDensity = newCalculationDensity;
 				backgroundImage = newBackgroundImage;
+				functions = newFunctions;
 
 			}
 
@@ -376,11 +383,50 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 
 		if (setPlotSettings()) {
 			calculateFunctionPoints(calculationDensity);
+			calculateTransformedFunctions();
 		}
 
 		// give parameters to the canvas and repaint them
 		setupCanvas();
 		repaintCanvas();
+
+	}
+
+	/**
+	 * calculate the functionpoints for the functions to transform, calculate new
+	 * value for each pixel in x direction
+	 */
+	private void calculateTransformedFunctions() {
+		
+		transformedFunctionOutputPoints = new ArrayList<ArrayList<Complex>>();
+
+		if (functions != null) {
+			
+//			System.out.println("GUI: \t calculating " + functions.size() + " transformed functions");
+			
+			// for each x value, calculate y and transform that value
+			Complex currentComplexInput;
+			double y;
+
+			ArrayList<Complex> currentFunction = new ArrayList<>();
+
+			// calculate for each function
+			for (int i = 0; i < functions.size(); i++) {
+				
+				currentFunction = new ArrayList<Complex>();
+
+				for (double x = inputArea[0]; x <= inputArea[1]; x += 1.0
+						/ locationCanvas.getPaintableDimension().getWidth()) {
+
+					y = calculate(new Complex(x, 0, true), functions.get(i)).getRe();
+					currentFunction.add(calculate(new Complex(x, y, true), function));
+
+				}
+
+				transformedFunctionOutputPoints.add(currentFunction);
+
+			}
+		}
 
 	}
 
