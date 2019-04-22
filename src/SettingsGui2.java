@@ -1,5 +1,10 @@
+import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
+import java.io.UnsupportedEncodingException;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -12,20 +17,21 @@ import javax.swing.SpringLayout;
 import javax.swing.SpringLayout.Constraints;
 import javax.swing.SwingConstants;
 
-public class SettingsGui2 extends JFrame {
+public class SettingsGui2 extends JFrame implements ActionListener {
 
 	private Font FONT = new Font("Ubuntu", Font.PLAIN, 40); // font used on the panel
 	private Font INFOFONT = new Font("Ubuntu", Font.ITALIC, 20); // font used on the panel
 	private String function; // name of function
 	private SpringLayout layout = new SpringLayout();
 	private JTextField inputArea, outputArea; // to set input and output area
-	private JTextField density, calculationDensity, coordinatelineDensity, dotwidth;
+	private JTextField density, calculationDensity, coordinatelineDensity, dotwidth, circlewidth;
 	private JTextField functionField;
-	private JCheckBox functionPoints, horizontalLines, verticalLines; // true if it should be drawn
+	private JCheckBox functionPoints, horizontalLines, verticalLines, auto, backgroundImage; // true if it should be drawn
 	private JButton apply; // apply settings and close window
 	private JLabel title; // window title
 	private Gui parent;
-
+	private Editor editor;	// editor for the 2d canvas background image
+	
 	/* CONSTRUCTOR */
 
 	/**
@@ -55,8 +61,11 @@ public class SettingsGui2 extends JFrame {
 
 		// add gui elements
 		addSettingsElements();
-
-		this.pack();
+		
+		// create editor
+		editor = new Editor ("2D canvas background image editor", parent);
+		
+//		this.pack();
 
 	}
 
@@ -84,6 +93,7 @@ public class SettingsGui2 extends JFrame {
 
 		functionField.setFont(FONT);
 		functionField.setText(function);
+		functionField.addKeyListener(parent);
 		SpringLayout.Constraints functionFieldCons = new Constraints(functionField);
 		functionFieldCons.setWidth(Spring.constant((int) (0.85 * this.getSize().width)));
 		functionFieldCons.setHeight(Spring.constant(50));
@@ -125,6 +135,7 @@ public class SettingsGui2 extends JFrame {
 		inputArea = new JTextField(
 				(int) input[0] + ", " + (int) input[1] + ", " + (int) input[2] + ", " + (int) input[3]);
 		inputArea.setFont(FONT);
+		inputArea.addKeyListener(parent);
 		SpringLayout.Constraints inputAreaCons = new Constraints(inputArea);
 		inputAreaCons.setWidth(Spring.constant((int) (0.35 * this.getSize().width)));
 		inputAreaCons.setHeight(Spring.constant(50));
@@ -136,18 +147,37 @@ public class SettingsGui2 extends JFrame {
 		outputAreaLabel.setFont(FONT);
 		outputAreaLabel.setHorizontalAlignment(JLabel.CENTER);
 		SpringLayout.Constraints outputAreaLabelCons = new Constraints(outputAreaLabel);
-		outputAreaLabelCons.setWidth(Spring.constant(this.getSize().width / 5));
+		outputAreaLabelCons.setWidth(Spring.constant(this.getSize().width * 3 / 20));
 		outputAreaLabelCons.setHeight(Spring.constant(50));
 		outputAreaLabelCons.setX(inputAreaCons.getConstraint(SpringLayout.EAST));
 		outputAreaLabelCons.setY(inputAreaLabelCons.getConstraint(SpringLayout.NORTH));
 		layout.addLayoutComponent(outputAreaLabel, outputAreaLabelCons);
+
+		// auto jcheckbox for outputArea
+		JLabel autoInfoLabel = new JLabel("Auto");
+		autoInfoLabel.setFont(INFOFONT);
+		SpringLayout.Constraints autoInfoLabelCons = new Constraints(autoInfoLabel);
+		autoInfoLabelCons.setWidth(Spring.constant(this.getSize().width / 20));
+		autoInfoLabelCons.setHeight(Spring.constant(25));
+		autoInfoLabelCons.setX(Spring.sum(outputAreaLabelCons.getConstraint(SpringLayout.EAST), Spring.constant(-10)));
+		autoInfoLabelCons.setY(Spring.sum(inputAreaLabelCons.getConstraint(SpringLayout.NORTH), Spring.constant(-15)));
+		layout.addLayoutComponent(autoInfoLabel, autoInfoLabelCons);
+
+		auto = new JCheckBox();
+		auto.setSelected(true);
+		SpringLayout.Constraints autoCons = new Constraints(auto);
+		autoCons.setX(outputAreaLabelCons.getConstraint(SpringLayout.EAST));
+		autoCons.setWidth(Spring.constant(this.getSize().width / 20));
+		autoCons.setHeight(Spring.constant(30));
+		autoCons.setY(Spring.sum(outputAreaLabelCons.getConstraint(SpringLayout.NORTH), Spring.constant(10)));
+		layout.addLayoutComponent(auto, autoCons);
 
 		JLabel outputInfoLabel2 = new JLabel("[  x_min,    x_max,    y_min,    y_max  ]");
 		outputInfoLabel2.setFont(INFOFONT);
 		SpringLayout.Constraints outputInfoLabel2Cons = new Constraints(outputInfoLabel2);
 		outputInfoLabel2Cons.setWidth(Spring.constant((int) (0.35 * this.getSize().width)));
 		outputInfoLabel2Cons.setHeight(Spring.constant(25));
-		outputInfoLabel2Cons.setX(outputAreaLabelCons.getConstraint(SpringLayout.EAST));
+		outputInfoLabel2Cons.setX(autoCons.getConstraint(SpringLayout.EAST));
 		outputInfoLabel2Cons
 				.setY(Spring.sum(outputAreaLabelCons.getConstraint(SpringLayout.NORTH), Spring.constant(-25)));
 		layout.addLayoutComponent(outputInfoLabel2, outputInfoLabel2Cons);
@@ -155,14 +185,15 @@ public class SettingsGui2 extends JFrame {
 		int[] output = parent.getOutputAreaSquare();
 		outputArea = new JTextField(output[0] + ", " + output[1] + ", " + output[2] + ", " + output[3]);
 		outputArea.setFont(FONT);
+		outputArea.addKeyListener(parent);
 		SpringLayout.Constraints outputAreaCons = new Constraints(outputArea);
 		outputAreaCons.setWidth(Spring.constant((int) (0.35 * this.getSize().width)));
 		outputAreaCons.setHeight(Spring.constant(50));
-		outputAreaCons.setX(outputAreaLabelCons.getConstraint(SpringLayout.EAST));
+		outputAreaCons.setX(autoCons.getConstraint(SpringLayout.EAST));
 		outputAreaCons.setY(inputAreaLabelCons.getConstraint(SpringLayout.NORTH));
 		layout.addLayoutComponent(outputArea, outputAreaCons);
 
-		JLabel inputInfoLabel = new JLabel("only Integers");
+		JLabel inputInfoLabel = new JLabel("Doubles, aPi, -aPi, a real > 0");
 		inputInfoLabel.setFont(INFOFONT);
 		SpringLayout.Constraints inputInfoLabelCons = new Constraints(inputInfoLabel);
 		inputInfoLabelCons.setWidth(Spring.constant((int) (0.3 * this.getSize().width)));
@@ -189,8 +220,9 @@ public class SettingsGui2 extends JFrame {
 		calculationDensityLabelCons.setY(outputInfoLabelCons.getConstraint(SpringLayout.SOUTH));
 		layout.addLayoutComponent(calculationDensityLabel, calculationDensityLabelCons);
 
-		calculationDensity = new JTextField("20");
+		calculationDensity = new JTextField(Integer.toString(parent.getCalculationDensity()));
 		calculationDensity.setFont(FONT);
+		calculationDensity.addKeyListener(parent);
 		SpringLayout.Constraints calculationDensityCons = new Constraints(calculationDensity);
 		calculationDensityCons.setWidth(Spring.constant((int) (0.2 * this.getSize().width)));
 		calculationDensityCons.setHeight(Spring.constant(50));
@@ -206,8 +238,9 @@ public class SettingsGui2 extends JFrame {
 		densityLabelCons.setY(calculationDensityCons.getConstraint(SpringLayout.SOUTH));
 		layout.addLayoutComponent(densityLabel, densityLabelCons);
 
-		density = new JTextField("20");
+		density = new JTextField(Integer.toString(parent.getPaintDensity()));
 		density.setFont(FONT);
+		density.addKeyListener(parent);
 		SpringLayout.Constraints densityCons = new Constraints(density);
 		densityCons.setWidth(Spring.constant((int) (0.2 * this.getSize().width)));
 		densityCons.setHeight(Spring.constant(50));
@@ -215,7 +248,7 @@ public class SettingsGui2 extends JFrame {
 		densityCons.setY(densityLabelCons.getConstraint(SpringLayout.NORTH));
 		layout.addLayoutComponent(density, densityCons);
 
-		JLabel densityInfoLabel = new JLabel("density >= 4");
+		JLabel densityInfoLabel = new JLabel("density >= 0");
 		densityInfoLabel.setFont(INFOFONT);
 		SpringLayout.Constraints densityInfoLabelCons = new Constraints(densityInfoLabel);
 		densityInfoLabelCons.setWidth(Spring.constant((int) (0.2 * this.getSize().width)));
@@ -232,8 +265,9 @@ public class SettingsGui2 extends JFrame {
 		coordinatelineDensityLabelCons.setY(densityInfoLabelCons.getConstraint(SpringLayout.SOUTH));
 		layout.addLayoutComponent(coordinatelineDensityLabel, coordinatelineDensityLabelCons);
 
-		coordinatelineDensity = new JTextField("1");
+		coordinatelineDensity = new JTextField(Integer.toString(parent.getCoordinatelineDensity()));
 		coordinatelineDensity.setFont(FONT);
+		coordinatelineDensity.addKeyListener(parent);
 		SpringLayout.Constraints coordinatelineDensityCons = new Constraints(coordinatelineDensity);
 		coordinatelineDensityCons.setWidth(Spring.constant((int) (0.2 * this.getSize().width)));
 		coordinatelineDensityCons.setHeight(Spring.constant(50));
@@ -241,7 +275,7 @@ public class SettingsGui2 extends JFrame {
 		coordinatelineDensityCons.setY(coordinatelineDensityLabelCons.getConstraint(SpringLayout.NORTH));
 		layout.addLayoutComponent(coordinatelineDensity, coordinatelineDensityCons);
 
-		JLabel coordinatelineDensityInfoLabel = new JLabel("coord.lineDensity >= 1");
+		JLabel coordinatelineDensityInfoLabel = new JLabel("coord.lineDensity >= 0");
 		coordinatelineDensityInfoLabel.setFont(INFOFONT);
 		SpringLayout.Constraints coordinatelineDensityInfoLabelCons = new Constraints(coordinatelineDensityInfoLabel);
 		coordinatelineDensityInfoLabelCons.setWidth(Spring.constant((int) (0.2 * this.getSize().width)));
@@ -258,8 +292,9 @@ public class SettingsGui2 extends JFrame {
 		dotwidthLabelCons.setY(coordinatelineDensityInfoLabelCons.getConstraint(SpringLayout.SOUTH));
 		layout.addLayoutComponent(dotwidthLabel, dotwidthLabelCons);
 
-		dotwidth = new JTextField("3");
+		dotwidth = new JTextField(Integer.toString(parent.getDotWidth()));
 		dotwidth.setFont(FONT);
+		dotwidth.addKeyListener(parent);
 		SpringLayout.Constraints dotwidthCons = new Constraints(dotwidth);
 		dotwidthCons.setWidth(Spring.constant((int) (0.2 * this.getSize().width)));
 		dotwidthCons.setHeight(Spring.constant(50));
@@ -267,13 +302,31 @@ public class SettingsGui2 extends JFrame {
 		dotwidthCons.setY(dotwidthLabelCons.getConstraint(SpringLayout.NORTH));
 		layout.addLayoutComponent(dotwidth, dotwidthCons);
 
+		JLabel circlewidthLabel = new JLabel("width of a circle at location (x, y, g(f(x+iy))): ");
+		circlewidthLabel.setFont(FONT);
+		SpringLayout.Constraints circlewidthLabelCons = new Constraints(circlewidthLabel);
+		circlewidthLabelCons.setWidth(Spring.constant((int) (0.8 * this.getSize().width)));
+		circlewidthLabelCons.setHeight(Spring.constant(50));
+		circlewidthLabelCons.setY(dotwidthCons.getConstraint(SpringLayout.SOUTH));
+		layout.addLayoutComponent(circlewidthLabel, circlewidthLabelCons);
+
+		circlewidth = new JTextField(Integer.toString(parent.getCircleWidth()));
+		circlewidth.setFont(FONT);
+		circlewidth.addKeyListener(parent);
+		SpringLayout.Constraints circlewidthCons = new Constraints(circlewidth);
+		circlewidthCons.setWidth(Spring.constant((int) (0.2 * this.getSize().width)));
+		circlewidthCons.setHeight(Spring.constant(50));
+		circlewidthCons.setX(circlewidthLabelCons.getConstraint(SpringLayout.EAST));
+		circlewidthCons.setY(circlewidthLabelCons.getConstraint(SpringLayout.NORTH));
+		layout.addLayoutComponent(circlewidth, circlewidthCons);
+
 		// add checkboxes
 		JLabel functionPointsLabel = new JLabel("painting points where f(z) is located:");
 		functionPointsLabel.setFont(FONT);
 		SpringLayout.Constraints functionPointsLabelCons = new Constraints(functionPointsLabel);
 		functionPointsLabelCons.setWidth(Spring.constant((int) (0.8 * this.getSize().width)));
 		functionPointsLabelCons.setHeight(Spring.constant(50));
-		functionPointsLabelCons.setY(dotwidthLabelCons.getConstraint(SpringLayout.SOUTH));
+		functionPointsLabelCons.setY(circlewidthLabelCons.getConstraint(SpringLayout.SOUTH));
 		layout.addLayoutComponent(functionPointsLabel, functionPointsLabelCons);
 
 		functionPoints = new JCheckBox();
@@ -315,13 +368,39 @@ public class SettingsGui2 extends JFrame {
 		verticalLinesCons.setHeight(Spring.constant(50));
 		verticalLinesCons.setY(horizontalLinesLabelCons.getConstraint(SpringLayout.SOUTH));
 		layout.addLayoutComponent(verticalLines, verticalLinesCons);
+		
+		// 2D canvas background image
+		JLabel backgroundImageLabel = new JLabel("show background image for 2D canvas:");
+		backgroundImageLabel.setFont(FONT);
+		SpringLayout.Constraints backgroundImageLabelCons = new Constraints(backgroundImageLabel);
+		backgroundImageLabelCons.setWidth(Spring.constant((int) (0.8 * this.getSize().width)));
+		backgroundImageLabelCons.setHeight(Spring.constant(50));
+		backgroundImageLabelCons.setY(verticalLinesCons.getConstraint(SpringLayout.SOUTH));
+		layout.addLayoutComponent(backgroundImageLabel, backgroundImageLabelCons);
+		
+		backgroundImage = new JCheckBox();
+		backgroundImage.setSelected(true);
+		SpringLayout.Constraints backgroundImageCons = new Constraints(backgroundImage);
+		backgroundImageCons.setX(Spring.constant((int) (0.8 * this.getSize().width)));
+		backgroundImageCons.setHeight(Spring.constant(50));
+		backgroundImageCons.setY(verticalLinesCons.getConstraint(SpringLayout.SOUTH));
+		layout.addLayoutComponent(backgroundImage, backgroundImageCons);
+		
+		JButton imageEditor = new JButton("edit background image");
+		imageEditor.setFont(FONT);
+		imageEditor.addActionListener(this);
+		SpringLayout.Constraints imageEditorCons = new Constraints(imageEditor);
+		imageEditorCons.setWidth(Spring.constant(this.getSize().width));
+		imageEditorCons.setHeight(Spring.constant(50));
+		imageEditorCons.setY(backgroundImageLabelCons.getConstraint(SpringLayout.SOUTH));
+		layout.addLayoutComponent(imageEditor, imageEditorCons);
 
 		// apply Button
 		apply.setFont(FONT);
 		SpringLayout.Constraints applyCons = new Constraints(apply);
 		applyCons.setWidth(Spring.constant(this.getSize().width));
 		applyCons.setHeight(Spring.constant(50));
-		applyCons.setY(Spring.constant(this.getSize().height - 50));
+		applyCons.setY(imageEditorCons.getConstraint(SpringLayout.SOUTH));
 		layout.addLayoutComponent(apply, applyCons);
 
 		// add components
@@ -335,6 +414,8 @@ public class SettingsGui2 extends JFrame {
 		this.add(inputArea);
 		this.add(outputInfoLabel2);
 		this.add(outputAreaLabel);
+		this.add(autoInfoLabel);
+		this.add(auto);
 		this.add(outputArea);
 		this.add(inputInfoLabel);
 		this.add(outputInfoLabel);
@@ -354,12 +435,17 @@ public class SettingsGui2 extends JFrame {
 		this.add(coordinatelineDensityInfoLabel);
 		this.add(dotwidthLabel);
 		this.add(dotwidth);
+		this.add(circlewidthLabel);
+		this.add(circlewidth);
+		this.add(backgroundImageLabel);
+		this.add(backgroundImage);
+		this.add(imageEditor);
 		this.add(apply);
 
 	}
 
 	/* GETTERS */
-	
+
 	/**
 	 * @return true if we paint function points
 	 */
@@ -380,12 +466,26 @@ public class SettingsGui2 extends JFrame {
 	public boolean paintVerticalLines() {
 		return verticalLines.isSelected();
 	}
+	
+	/**
+	 * @return true if we paint a background image on 2D canvas
+	 */
+	public boolean paint2DCanvasBackgroundImage() {
+		return backgroundImage.isSelected();
+	}
 
 	/**
 	 * @return the dotWidth
 	 */
 	public int getDotWidth() {
 		return Integer.parseInt(dotwidth.getText());
+	}
+
+	/**
+	 * @return the circleWidth
+	 */
+	public int getCircleWidth() {
+		return Integer.parseInt(circlewidth.getText());
 	}
 
 	/**
@@ -415,32 +515,56 @@ public class SettingsGui2 extends JFrame {
 	public double[] getInputArea() {
 		double[] result = new double[4];
 		String[] split = inputArea.getText().split(",");
+		String[] split02;
 
 		for (int i = 0; i < 4; i++) {
 			split[i] = split[i].replaceAll("\\s", "");
+			split02 = split[i].split("Pi");
 
-			switch (split[i]) {
+			// if there was no "Pi", its a normal number
+			if (split[i] == split02[0]) {
 
-			case "Pi":
-				result[i] = Math.PI;
-				break;
-
-			case "-Pi":
-				result[i] = -Math.PI;
-				break;
-
-			case "2Pi":
-				result[i] = 2 * Math.PI;
-				break;
-
-			case "-2Pi":
-				result[i] = -2 * Math.PI;
-				break;
-
-			default:
 				result[i] = Double.parseDouble(split[i]);
 
+			} else {
+				switch (split02[0]) {
+
+				case "-":
+					result[i] = (-1) * Math.PI;
+					break;
+
+				case "":
+					result[i] = Math.PI;
+					break;
+
+				default:
+					result[i] = Double.parseDouble(split02[0]) * Math.PI;
+				}
 			}
+
+			// TODO: remove
+//			switch (split[i]) {
+//
+//			case "Pi":
+//				result[i] = Math.PI;
+//				break;
+//
+//			case "-Pi":
+//				result[i] = -Math.PI;
+//				break;
+//
+//			case "2Pi":
+//				result[i] = 2 * Math.PI;
+//				break;
+//
+//			case "-2Pi":
+//				result[i] = -2 * Math.PI;
+//				break;
+//
+//			default:
+//				result[i] = Double.parseDouble(split[i]);
+//
+//			}
 		}
 
 		return result;
@@ -452,7 +576,7 @@ public class SettingsGui2 extends JFrame {
 	 */
 	public int[] getOutputArea() {
 
-		if (outputArea.getText().equals("auto")) {
+		if (auto.isSelected()) {
 			return null;
 		}
 
@@ -474,30 +598,40 @@ public class SettingsGui2 extends JFrame {
 		return functionField.getText().replaceAll("\\s", "");
 	}
 	
+	/**
+	 * @return the background image
+	 */
+	public BufferedImage getBackgroundImage() {
+		return editor.getBackgroundImage();
+	}
+
 	/* SETTERS */
 	/**
+	 * 
+	 * TODO: can be removed?
+	 * 
 	 * @param values the new inputArea as double[] {..., ..., ..., ...}
 	 */
-	public void setInputArea(double[] values) {
-		String result = "";
-		for (int i = 0; i < 4; i++) {
-			if (values[i] == Math.PI) {
-				result += "Pi";
-			} else if (values[i] == -Math.PI) {
-				result += "-Pi";
-			} else if (values[i] == 2 * Math.PI) {
-				result += "2Pi";
-			} else if (values[i] == -2 * Math.PI) {
-				result += "-2Pi";
-			} else {
-				result += values[i];
-			}
-			result += ", ";
-		}
-		// remove last ', '
-		result = result.substring(0, result.length() - 2);
-		inputArea.setText(result);
-	}
+//	public void setInputArea(double[] values) {
+//		String result = "";
+//		for (int i = 0; i < 4; i++) {
+//			if (values[i] == Math.PI) {
+//				result += "Pi";
+//			} else if (values[i] == -Math.PI) {
+//				result += "-Pi";
+//			} else if (values[i] == 2 * Math.PI) {
+//				result += "2Pi";
+//			} else if (values[i] == -2 * Math.PI) {
+//				result += "-2Pi";
+//			} else {
+//				result += values[i];
+//			}
+//			result += ", ";
+//		}
+//		// remove last ', '
+//		result = result.substring(0, result.length() - 2);
+//		inputArea.setText(result);
+//	}
 
 	/**
 	 * @param values the new outputArea as int[] {..., ..., ..., ...}
@@ -508,7 +642,7 @@ public class SettingsGui2 extends JFrame {
 			result += values[i] + ", ";
 		}
 		// remove last ','
-		result = result.substring(0, result.length() - 1);
+		result = result.substring(0, result.length() - 2);
 		outputArea.setText(result);
 	}
 
@@ -524,6 +658,27 @@ public class SettingsGui2 extends JFrame {
 	 */
 	public void setTitleLabel(String name) {
 		title.setText(" ---------- " + name + " ---------- ");
+	}
+	
+	/**
+	 * repaints the editor
+	 */
+	public void repaintEditor() {
+		editor.repaint();
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		
+//		System.out.println("SETTINGSGUI2: \t \"" + e.getActionCommand() + "\" clicked");
+		
+		switch(e.getActionCommand()) {
+		
+		case "edit background image": editor.setVisible(true);
+			break;
+			
+		}
+		
 	}
 
 }

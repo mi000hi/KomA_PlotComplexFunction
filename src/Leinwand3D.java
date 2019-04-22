@@ -41,7 +41,7 @@ public class Leinwand3D extends ParentLeinwand3D {
 		this.parent = parent;
 
 		// initialize final variables
-		MARGIN = 50;
+		MARGIN = 5;
 
 		// add a title label to this jpanel
 		titleLabel = new JLabel();
@@ -135,14 +135,65 @@ public class Leinwand3D extends ParentLeinwand3D {
 			for (int x = 0; x < numberOfPoints.x; x++) {
 
 				startNewLine = true;
+				currentY = (int) inputArea[2];
+
+				// draw horizontal coordinate system lines
+				if (functionInputPoints.get(x * numberOfPoints.y).getRe() - currentX > 0) {
+					lineStart = new Point3D(currentX, inputArea[2], 0);
+					lineEnd = new Point3D(currentX, inputArea[3], 0);
+
+					lineStart2 = get2DScreenCoordinates(lineStart);
+					lineEnd2 = get2DScreenCoordinates(lineEnd);
+
+					if (currentX == 0) {
+						g.setColor(Color.WHITE);
+						g.fillRect(lineStart2.x, lineStart2.y + 1, lineEnd2.x - lineStart2.x, 2);
+					} else {
+						g.setColor(Color.GRAY);
+						g.fillRect(lineStart2.x, lineStart2.y, lineEnd2.x - lineStart2.x, 1);
+					}
+
+					currentX++;
+				}
 
 				for (int y = 0; y < numberOfPoints.y; y++) {
 
 //					System.out.println("x, y: " + x + ", " + y);
 					currentFunctionValue = getFunctionValue(x * numberOfPoints.y + y);
 					currentInputValue = functionInputPoints.get(x * numberOfPoints.y + y);
-					
-					currentPoint3D = new Point3D(currentInputValue.getRe(), currentInputValue.getIm(), currentFunctionValue);
+
+					if (currentInputValue == null) {
+						continue;
+					}
+
+					currentPoint3D = new Point3D(currentInputValue.getRe(), currentInputValue.getIm(),
+							currentFunctionValue);
+
+					if (currentPoint3D.getY() - currentY > 0) {
+
+						Point point = get2DScreenCoordinates(
+								new Point3D(currentPoint3D.getX(), currentPoint3D.getY(), 0));
+
+						if (currentY == 0) {
+							g.setColor(Color.WHITE);
+							g.fillRect(point.x, point.y, 2, 2);
+							// TODO: there are some dots in a circle around z axis resulting from the line
+							// above, plot f(z) = 1/z for example
+//							System.out.println("x, y = " + point.x + ", " + point.y);
+
+							// draw z axis
+							if (currentX == 0) {
+								point = get2DScreenCoordinates(new Point3D(0, 0, 1.2 * maxZ));
+
+								g.fillRect(point.x - 1, point.y, 3, zero.y - point.y);
+							}
+						} else {
+							g.setColor(Color.GRAY);
+							g.fillRect(point.x, point.y, 1, 1);
+						}
+
+						currentY++;
+					}
 
 					if (currentFunctionValue <= maxZ && currentFunctionValue >= minZ) {
 						if (currentFunctionValue != parent.getSecretNumber()) {
@@ -158,7 +209,8 @@ public class Leinwand3D extends ParentLeinwand3D {
 
 							g.setColor(getColor(currentFunctionValue, minZ, maxZ));
 
-							g.fillOval(currentPoint2D.x, currentPoint2D.y, circleWidth, circleWidth);
+							g.fillOval(currentPoint2D.x - circleWidth / 2, currentPoint2D.y - circleWidth / 2,
+									circleWidth, circleWidth);
 //							g.drawLine(lastPoint2D.x, lastPoint2D.y, currentPoint2D.x, currentPoint2D.y);
 
 						} else {
@@ -171,158 +223,7 @@ public class Leinwand3D extends ParentLeinwand3D {
 
 			}
 
-//			for (int i = 0; i < functionPoints.size(); i++) {
-//
-//				if (functionPoints.get(i).getZ() <= maxZ && functionPoints.get(i).getZ() >= minZ) {
-//
-//					currentPoint = get2DScreenCoordinates(functionPoints.get(i));
-//
-//					/** different color schemes */
-//					// g.setColor(getColor(Math.sqrt(Math.pow(functionPoints.get(i).getX(), 2) +
-//					// Math.pow(functionPoints.get(i).getY(), 2)), 0, Math.sqrt(8)));
-//					// g.setColor(getColor(Math.sqrt(Math.pow(functionPoints.get(i).getX(), 2) +
-//					// Math.pow(functionPoints.get(i).getY(), 2) +
-//					// Math.pow(functionPoints.get(i).getZ(), 2)), 0, Math.sqrt(4 + 4 +
-//					// Math.pow(maxZ, 2))));
-//
-//					g.setColor(getColor(functionPoints.get(i).getZ(), minZ, maxZ));
-//					// g.setColor(getColor(functionPoints.get(i).getX(), -2, 2));
-//					g.fillOval(currentPoint.x - (circleWidth / 2), currentPoint.y - (circleWidth / 2), circleWidth,
-//							circleWidth);
-//
-//				}
-//
-//				// draw the coordinate system again on the fly, so that it does not get hidden
-//				// behind the graph
-//				// x-axes
-//				if (functionPoints.get(i).getX() - currentX > 0) {
-//
-//					lineStart = new Point3D(currentX, inputArea[2], 0);
-//					lineEnd = new Point3D(currentX, inputArea[3], 0);
-//
-//					lineStart2 = get2DScreenCoordinates(lineStart);
-//					lineEnd2 = get2DScreenCoordinates(lineEnd);
-//
-//					g.setColor(Color.WHITE);
-//					if (currentX == 0) {
-//						g.fillRect(lineStart2.x, lineStart2.y, lineEnd2.x - lineStart2.x, 3);
-//					} else {
-//						g.fillRect(lineStart2.x, lineStart2.y, lineEnd2.x - lineStart2.x, 2);
-//					}
-//
-//					currentX++;
-//
-//				}
-//				// y-axes
-//				if (functionPoints.get(i).getY() - currentY > 0) {
-//
-//					lineStart = new Point3D(functionPoints.get(i).getX(), currentY, 0);
-//
-//					lineStart2 = get2DScreenCoordinates(lineStart);
-//
-//					g.setColor(Color.WHITE);
-//
-//					if (currentY == 0) {
-//						g.fillRect(lineStart2.x - 1, lineStart2.y - 1, 3, 3);
-//					} else {
-//						g.fillOval(lineStart2.x - 1, lineStart2.y - 1, 3, 3);
-//					}
-//
-//					if (currentY > (int) inputArea[3] - 1) {
-//						currentY = (int) inputArea[2];
-//					} else {
-//						currentY++;
-//					}
-//
-//				}
-//			}
-
 		}
-
-//		// if we want to draw lines
-//		if (drawLines) {
-//
-//			currentPoint = new Point(0, 0);
-//			Point lastPoint = currentPoint; // on-screen-location of the current drawn
-//			// functionValue
-//
-//			boolean startNewLine = false; // is false while we draw all y coordinates at a fixed x coordinate
-//
-//			int pointsInXDirection = 1
-//					+ (int) (Math.abs(inputArea[0]) + Math.abs(inputArea[1])) * parent.getCalculationDensity();
-//			int pointsInYDirection = 1
-//					+ (int) ((Math.abs(inputArea[2]) + Math.abs(inputArea[3])) * parent.getCalculationDensity());
-//
-//			// System.out.println(pointsInXDirection + " x " + pointsInYDirection + " = " +
-//			// outputPoints.size() + " points");
-//
-//			for (int x = 0; x < pointsInXDirection; x++) {
-//
-//				startNewLine = true;
-//
-//				for (int y = 0; y < pointsInYDirection; y++) {
-//
-//					if (functionPoints.get(x * pointsInYDirection + y).getZ() <= maxZ
-//							&& functionPoints.get(x * pointsInYDirection + y).getZ() >= minZ) {
-//						if (functionPoints.get(x * pointsInYDirection + y).getY() != parent.getSecretNumber()) {
-//
-//							if (startNewLine) {
-//								currentPoint = get2DScreenCoordinates(functionPoints.get(x * pointsInYDirection + y));
-//								lastPoint = currentPoint;
-//								startNewLine = false;
-//							} else {
-//								lastPoint = currentPoint;
-//								currentPoint = get2DScreenCoordinates(functionPoints.get(x * pointsInYDirection + y));
-//							}
-//
-//							g.setColor(getColor(functionPoints.get(x * pointsInYDirection + y).getZ(), minZ, maxZ));
-//
-//							g.drawLine(lastPoint.x, lastPoint.y, currentPoint.x, currentPoint.y);
-//
-//						} else {
-////							System.out.println("starting new line");
-//							startNewLine = true;
-//						}
-//					}
-//
-//				}
-//
-//			}
-//
-//			for (int y = 0; y < pointsInYDirection; y++) {
-//
-//				startNewLine = true;
-//
-//				for (int x = 0; x < pointsInXDirection; x++) {
-//
-//					if (functionPoints.get(x * pointsInYDirection + y).getZ() <= maxZ
-//							&& functionPoints.get(x * pointsInYDirection + y).getZ() >= minZ) {
-//						if (functionPoints.get(x * pointsInYDirection + y).getY() != parent.getSecretNumber()) {
-//
-//							if (startNewLine) {
-//								currentPoint = get2DScreenCoordinates(functionPoints.get(x * pointsInYDirection + y));
-//								lastPoint = currentPoint;
-//								startNewLine = false;
-//							} else {
-//								lastPoint = currentPoint;
-//								currentPoint = get2DScreenCoordinates(functionPoints.get(x * pointsInYDirection + y));
-//							}
-//
-//							g.setColor(getColor(functionPoints.get(x * pointsInYDirection + y).getZ(), minZ, maxZ));
-//
-//							g.drawLine(lastPoint.x, lastPoint.y, currentPoint.x, currentPoint.y);
-//
-//						} else {
-////							System.out.println("starting new line");
-//							startNewLine = true;
-//						}
-//
-//					}
-//				}
-//
-//			}
-//
-//		}
 
 	}
 
