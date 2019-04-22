@@ -1,10 +1,12 @@
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -26,12 +28,13 @@ public class SettingsGui2 extends JFrame implements ActionListener {
 	private JTextField inputArea, outputArea; // to set input and output area
 	private JTextField density, calculationDensity, coordinatelineDensity, dotwidth, circlewidth;
 	private JTextField functionField;
-	private JCheckBox functionPoints, horizontalLines, verticalLines, auto, backgroundImage; // true if it should be drawn
+	private JCheckBox functionPoints, horizontalLines, verticalLines, auto, backgroundImage; // true if it should be
+																								// drawn
 	private JButton apply; // apply settings and close window
 	private JLabel title; // window title
 	private Gui parent;
-	private Editor editor;	// editor for the 2d canvas background image
-	
+	private Editor editor; // editor for the 2d canvas background image
+
 	/* CONSTRUCTOR */
 
 	/**
@@ -61,10 +64,10 @@ public class SettingsGui2 extends JFrame implements ActionListener {
 
 		// add gui elements
 		addSettingsElements();
-		
+
 		// create editor
-		editor = new Editor ("2D canvas background image editor", parent);
-		
+		editor = new Editor("2D canvas background image editor", parent);
+
 //		this.pack();
 
 	}
@@ -102,7 +105,7 @@ public class SettingsGui2 extends JFrame implements ActionListener {
 		layout.addLayoutComponent(functionField, functionFieldCons);
 
 		JLabel functionFieldInfoLabel = new JLabel(
-				"example function: f(z) = (sin(z)*cos(z) + 1) * exp(z / (0 - i) + 2 * i) - 2");
+				"example function: f(z) = (sin(z)*cos(z) + 1) * exp(z / (- i) + 2 * i) - 2");
 		functionFieldInfoLabel.setFont(INFOFONT);
 		SpringLayout.Constraints functionFieldInfoLabelCons = new Constraints(functionFieldInfoLabel);
 		functionFieldInfoLabelCons.setWidth(Spring.constant((int) (0.85 * this.getSize().width)));
@@ -230,7 +233,7 @@ public class SettingsGui2 extends JFrame implements ActionListener {
 		calculationDensityCons.setY(calculationDensityLabelCons.getConstraint(SpringLayout.NORTH));
 		layout.addLayoutComponent(calculationDensity, calculationDensityCons);
 
-		JLabel densityLabel = new JLabel("dots to paint in n..n+1: ");
+		JLabel densityLabel = new JLabel("paint one dot per n calculated dots: ");
 		densityLabel.setFont(FONT);
 		SpringLayout.Constraints densityLabelCons = new Constraints(densityLabel);
 		densityLabelCons.setWidth(Spring.constant((int) (0.8 * this.getSize().width)));
@@ -257,7 +260,7 @@ public class SettingsGui2 extends JFrame implements ActionListener {
 		densityInfoLabelCons.setY(densityCons.getConstraint(SpringLayout.SOUTH));
 		layout.addLayoutComponent(densityInfoLabel, densityInfoLabelCons);
 
-		JLabel coordinatelineDensityLabel = new JLabel("coordinate lines to draw between n..n+1: ");
+		JLabel coordinatelineDensityLabel = new JLabel("draw one coordinate line every n steps: ");
 		coordinatelineDensityLabel.setFont(FONT);
 		SpringLayout.Constraints coordinatelineDensityLabelCons = new Constraints(coordinatelineDensityLabel);
 		coordinatelineDensityLabelCons.setWidth(Spring.constant((int) (0.8 * this.getSize().width)));
@@ -368,7 +371,7 @@ public class SettingsGui2 extends JFrame implements ActionListener {
 		verticalLinesCons.setHeight(Spring.constant(50));
 		verticalLinesCons.setY(horizontalLinesLabelCons.getConstraint(SpringLayout.SOUTH));
 		layout.addLayoutComponent(verticalLines, verticalLinesCons);
-		
+
 		// 2D canvas background image
 		JLabel backgroundImageLabel = new JLabel("show background image for 2D canvas:");
 		backgroundImageLabel.setFont(FONT);
@@ -377,7 +380,7 @@ public class SettingsGui2 extends JFrame implements ActionListener {
 		backgroundImageLabelCons.setHeight(Spring.constant(50));
 		backgroundImageLabelCons.setY(verticalLinesCons.getConstraint(SpringLayout.SOUTH));
 		layout.addLayoutComponent(backgroundImageLabel, backgroundImageLabelCons);
-		
+
 		backgroundImage = new JCheckBox();
 		backgroundImage.setSelected(true);
 		SpringLayout.Constraints backgroundImageCons = new Constraints(backgroundImage);
@@ -385,7 +388,7 @@ public class SettingsGui2 extends JFrame implements ActionListener {
 		backgroundImageCons.setHeight(Spring.constant(50));
 		backgroundImageCons.setY(verticalLinesCons.getConstraint(SpringLayout.SOUTH));
 		layout.addLayoutComponent(backgroundImage, backgroundImageCons);
-		
+
 		JButton imageEditor = new JButton("edit background image");
 		imageEditor.setFont(FONT);
 		imageEditor.addActionListener(this);
@@ -466,7 +469,7 @@ public class SettingsGui2 extends JFrame implements ActionListener {
 	public boolean paintVerticalLines() {
 		return verticalLines.isSelected();
 	}
-	
+
 	/**
 	 * @return true if we paint a background image on 2D canvas
 	 */
@@ -597,7 +600,21 @@ public class SettingsGui2 extends JFrame implements ActionListener {
 	public String getFunction() {
 		return functionField.getText().replaceAll("\\s", "");
 	}
+
+	/**
+	 * @return returns the input functions arraylist
+	 */
+	public ArrayList<String> getInputFunctions() {
+		return editor.getFunctions();
+	}
 	
+	/**
+	 * @return returns the input function colors arraylist
+	 */
+	public ArrayList<Color> getInputFunctionColors() {
+		return editor.getFunctionColors();
+	}
+
 	/**
 	 * @return the background image
 	 */
@@ -659,7 +676,7 @@ public class SettingsGui2 extends JFrame implements ActionListener {
 	public void setTitleLabel(String name) {
 		title.setText(" ---------- " + name + " ---------- ");
 	}
-	
+
 	/**
 	 * repaints the editor
 	 */
@@ -669,16 +686,17 @@ public class SettingsGui2 extends JFrame implements ActionListener {
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		
+
 //		System.out.println("SETTINGSGUI2: \t \"" + e.getActionCommand() + "\" clicked");
-		
-		switch(e.getActionCommand()) {
-		
-		case "edit background image": editor.setVisible(true);
+
+		switch (e.getActionCommand()) {
+
+		case "edit background image":
+			editor.setVisible(true);
 			break;
-			
+
 		}
-		
+
 	}
 
 }

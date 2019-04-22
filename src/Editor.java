@@ -279,7 +279,21 @@ public class Editor extends JFrame implements ActionListener, KeyListener {
 		return backgroundImage;
 
 	}
-	
+
+	/**
+	 * @return returns arraylist with the functions to transform
+	 */
+	public ArrayList<String> getFunctions() {
+		return functions;
+	}
+
+	/**
+	 * @return returns arraylist with the colors of the functions to transform
+	 */
+	public ArrayList<Color> getFunctionColors() {
+		return colors;
+	}
+
 	@Override
 	public void actionPerformed(ActionEvent e) {
 

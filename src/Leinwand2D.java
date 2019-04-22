@@ -34,6 +34,8 @@ public class Leinwand2D extends JPanel {
 	private Gui parent; // this parent gui, where we can get informations from
 
 	private ArrayList<Complex> inputPoints, outputPoints; // input and output points from f(z)
+	private ArrayList<ArrayList<Complex>> transformedFunctionOutputPoints; // outputPoints from f(g(x))
+	private ArrayList<Color> transformedFunctionColors; // colors of the input functions and transformed functions
 
 	private BufferedImage backgroundImage; // background image
 
@@ -99,6 +101,9 @@ public class Leinwand2D extends JPanel {
 		// plot the function values f(z)
 		drawFunction(g); // Select which function to plot here
 
+		// plot the transformed function values f(g(x))
+		drawTransformedFunctions(g);
+
 		// draw the color legends
 		drawColorLegend(g);
 
@@ -150,22 +155,23 @@ public class Leinwand2D extends JPanel {
 
 					// TODO: use resolution / density of background image
 					// TODO: usable for rectangular input areas
-					if (backgroundImage != null && paintBackgroundImage) {
-
-						currentInputPoint = getPointAt(functionInputValue.getRe(), functionInputValue.getIm());
-						currentInputPoint.setLocation(x * backgroundImage.getWidth() / numberOfPoints.x,
-								y * backgroundImage.getHeight() / numberOfPoints.y);
-						backgroundColor = backgroundImage.getRGB(currentInputPoint.x, currentInputPoint.y);
-
-//						System.out.println("LEINWAND2D: \t painting at " + functionOutputValue.getRe() + ", " + functionOutputValue.getIm());
-//						System.out.println("LEINWAND2D: \t backgroundColor: " + backgroundColor);
-
-						// if point is not transparent
-						if (backgroundColor != 0) {
-							drawPointAt(functionOutputValue.getRe(), -functionOutputValue.getIm(), g,
-									new Color(backgroundColor));
-						}
-					}
+					// TODO: this method would be useful if we like to transform a complete image
+//					if (backgroundImage != null && paintBackgroundImage) {
+//
+//						currentInputPoint = getPointAt(functionInputValue.getRe(), functionInputValue.getIm());
+//						currentInputPoint.setLocation(x * backgroundImage.getWidth() / numberOfPoints.x,
+//								y * backgroundImage.getHeight() / numberOfPoints.y);
+//						backgroundColor = backgroundImage.getRGB(currentInputPoint.x, currentInputPoint.y);
+//
+////						System.out.println("LEINWAND2D: \t painting at " + functionOutputValue.getRe() + ", " + functionOutputValue.getIm());
+////						System.out.println("LEINWAND2D: \t backgroundColor: " + backgroundColor);
+//
+//						// if point is not transparent
+//						if (backgroundColor != 0) {
+//							drawPointAt(functionOutputValue.getRe(), -functionOutputValue.getIm(), g,
+//									new Color(backgroundColor));
+//						}
+//					}
 
 					if (paintVerticalLines) {
 
@@ -221,6 +227,40 @@ public class Leinwand2D extends JPanel {
 				}
 
 			}
+		}
+
+	}
+
+	/**
+	 * Draws the transformed functions f(g(x))
+	 */
+	private void drawTransformedFunctions(Graphics g) {
+
+		// paint the background image
+		if (paintBackgroundImage && transformedFunctionOutputPoints != null) {
+
+			ArrayList<Complex> currentTransformedFunction;
+			Complex currentPoint;
+			Color currentColor;
+
+			// draw each inputfunction
+			for (int i = 0; i < transformedFunctionOutputPoints.size(); i++) {
+
+				currentTransformedFunction = transformedFunctionOutputPoints.get(i);
+				currentColor = transformedFunctionColors.get(i);
+
+				// draw each outputPoint
+				for (int j = 0; j < currentTransformedFunction.size(); j++) {
+					
+					currentPoint = currentTransformedFunction.get(j);
+					
+//					System.out.println("LEINWAND2D: \t drawing point at " + currentPoint.getRe() + " + i(" + currentPoint.getIm() + ")");
+					drawPointAt(currentPoint.getRe(), currentPoint.getIm(), g, currentColor);
+					
+				}
+
+			}
+
 		}
 
 	}
@@ -420,6 +460,13 @@ public class Leinwand2D extends JPanel {
 
 	}
 
+	/**
+	 * @return returns paintable dimension of this jpanel
+	 */
+	public Dimension getPaintableDimension() {
+		return paintableDimension;
+	}
+
 	/* SETTERS */
 
 	/**
@@ -455,10 +502,13 @@ public class Leinwand2D extends JPanel {
 	 * @param inputPoints  points of the input definition function area
 	 * @param outputPoints points of the output, f(z)
 	 */
-	public void setFunctionValues(ArrayList<Complex> inputPoints, ArrayList<Complex> outputPoints) {
+	public void setFunctionValues(ArrayList<Complex> inputPoints, ArrayList<Complex> outputPoints,
+			ArrayList<ArrayList<Complex>> transformedFunctionOutputPoints, ArrayList<Color> colors) {
 
 		this.inputPoints = inputPoints;
 		this.outputPoints = outputPoints;
+		this.transformedFunctionOutputPoints = transformedFunctionOutputPoints;
+		this.transformedFunctionColors = colors;
 
 		inputArea = parent.getInputAreaSquare();
 		this.outputArea = parent.getOutputArea();
