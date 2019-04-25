@@ -538,16 +538,17 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 
 				case '-':
 //					System.out.println("GUI: \t i = " + i + ", function: " + function);
-					if (openBrackets == 0) {
+					if (openBrackets == 0 && i != 0) { // except case "-n"
 
 						Complex number;
 
+						// doesnt work here, because "-x+1" will be "-(x+1)"
 						// case "-n"
-						if (i == 0) {
-							number = new Complex(0, 0, true);
-						} else {
+//						if (i == 0) {
+//							number = new Complex(0, 0, true);
+//						} else {
 							number = calculate(z, function.substring(0, i));
-						}
+//						}
 
 						if (number == null) {
 							return null;
@@ -676,17 +677,40 @@ public class Gui extends JFrame implements ActionListener, KeyListener {
 		// if there also were no brackets to remove, we need to create a new complex
 		// number
 //	System.out.println("make a new Complex number from: " + input);
-		switch (function) {
+		
+		// case "-n"
+		if(function.charAt(0) == '-') {
+			
+			function = function.split("-")[1];
+			
+			switch (function) {
 
-		case "z":
-			return z;
+			case "z":
+				return z.multiply(new Complex(-1, 0, true));
 
-		case "i":
-			return new Complex(0, 1, true);
+			case "i":
+				return new Complex(0, -1, true);
 
-		default:
-//			System.out.println("CALCULATE: \t creating complex from " + function);
-			return new Complex(Double.parseDouble(function), 0, true);
+			default:
+//				System.out.println("CALCULATE: \t creating complex from " + function);
+				return new Complex(-Double.parseDouble(function), 0, true);
+			}
+			
+		} else {
+			
+			switch (function) {
+	
+			case "z":
+				return z;
+	
+			case "i":
+				return new Complex(0, 1, true);
+	
+			default:
+	//			System.out.println("CALCULATE: \t creating complex from " + function);
+				return new Complex(Double.parseDouble(function), 0, true);
+			}
+			
 		}
 
 	}
